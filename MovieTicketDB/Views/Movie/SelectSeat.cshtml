@@ -1,0 +1,215 @@
+﻿@model IEnumerable<MovieTicketDB.Models.Seat>
+
+@{
+    Layout = "~/Views/Shared/_Layout.cshtml";
+    var show = ViewBag.ShowTime as MovieTicketDB.Models.ShowTime;
+}
+
+<style>
+
+    .seat-wrapper {
+        background: white;
+        padding: 40px;
+        border-radius: 18px;
+        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
+    }
+
+    .seat-title {
+        text-align: center;
+        font-size: 38px;
+        font-weight: bold;
+        margin-bottom: 30px;
+    }
+
+    .screen {
+        width: 75%;
+        margin: auto;
+        background: #ddd;
+        padding: 18px;
+        border-radius: 40px;
+        text-align: center;
+        font-weight: bold;
+        margin-bottom: 45px;
+    }
+
+    .seat-grid,
+    .vip-seat-grid {
+        display: flex;
+        flex-wrap: wrap;
+        justify-content: center;
+        gap: 14px;
+    }
+
+    .seat-label input {
+        display: none;
+    }
+
+    .seat {
+        width: 65px;
+        height: 65px;
+        border-radius: 16px;
+        background: #f2f2f2;
+        font-weight: bold;
+        font-size: 16px;
+        transition: 0.3s;
+        display: flex;
+        justify-content: center;
+        align-items: center;
+        cursor: pointer;
+        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
+    }
+
+        .seat:hover {
+            transform: translateY(-5px) scale(1.08);
+            box-shadow: 0 8px 18px rgba(0,0,0,0.18);
+        }
+
+    .seat-label input:checked + .seat {
+        background: #2ecc71 !important;
+        color: white;
+    }
+
+    .vip-seat {
+        width: 95px !important;
+        background: #ff4d6d;
+        color: white;
+    }
+
+        .vip-seat:hover {
+            box-shadow: 0 8px 18px rgba(255,77,109,0.45);
+        }
+
+    .seat-label input:checked + .vip-seat {
+        background: #8e44ad !important;
+        color: white;
+    }
+
+    .vip-title {
+        text-align: center;
+        margin-top: 45px;
+        margin-bottom: 20px;
+        font-size: 24px;
+        font-weight: bold;
+        color: #ff4d6d;
+    }
+
+    .summary-box {
+        margin-top: 40px;
+        padding: 25px;
+        border-radius: 15px;
+        background: #fff4f4;
+        text-align: center;
+        font-size: 18px;
+        font-weight: bold;
+    }
+
+    .pay-btn {
+        margin-top: 20px;
+        padding: 14px 35px;
+        border: none;
+        border-radius: 12px;
+        background: red;
+        color: white;
+        font-weight: bold;
+        font-size: 18px;
+    }
+</style>
+
+<div class="seat-wrapper">
+
+    <div class="seat-title">
+
+        CHỌN GHẾ
+
+    </div>
+
+    <div class="screen">
+
+        SCREEN
+
+    </div>
+
+    <form method="post"
+          action="/Movie/Payment">
+
+        <input type="hidden"
+               name="showTimeId"
+               value="@show.ShowTimeID" />
+
+        <div class="seat-grid">
+
+            @foreach (var item in Model.Where(s => !s.SeatName.Contains("VIP")))
+            {
+                <label class="seat-label">
+
+               <input type="checkbox"
+                      name="seatNames"
+                      value="@item.SeatName" />
+
+                    <span class="seat">
+
+                        @item.SeatName
+
+                    </span>
+
+                </label>
+            }
+
+        </div>
+
+        <div class="vip-title">
+
+            GHẾ ĐÔI VIP
+
+        </div>
+
+        <div class="vip-seat-grid">
+
+            @foreach (var item in Model.Where(s => s.SeatName.Contains("VIP")))
+            {
+                <label class="seat-label">
+<input type="checkbox"
+       name="seatNames"
+       value="@item.SeatName" />
+
+                    <span class="seat vip-seat">
+
+                        @item.SeatName
+
+                    </span>
+
+                </label>
+            }
+
+        </div>
+
+        <div class="summary-box">
+
+            <p>
+
+                Ghế thường: 50,000 VNĐ / ghế
+
+            </p>
+
+            <p>
+
+                Ghế VIP: 100,000 VNĐ / ghế đôi
+
+            </p>
+
+            <hr />
+
+
+            <button type="submit"
+                    class="pay-btn">
+
+                Tiến hành thanh toán
+
+            </button>
+
+        </div>
+
+    </form>
+
+</div>
+

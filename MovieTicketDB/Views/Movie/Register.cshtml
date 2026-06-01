@@ -1,0 +1,47 @@
+﻿@{
+    ViewBag.Title = "Đăng ký";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<h2>Đăng ký tài khoản</h2>
+
+@if (ViewBag.Error != null)
+{
+    <div class="alert alert-danger">@ViewBag.Error</div>
+}
+
+<form method="post">
+    <div class="form-group">
+        <label>Tên đăng nhập</label>
+        <input type="text" name="UserName" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Họ và tên</label>
+        <input type="text" name="FullName" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Gmail</label>
+        <input type="email" name="Email" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Phone</label>
+        <input type="text" name="Phone" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Mật khẩu</label>
+        <input type="password" name="Password" class="form-control" required />
+    </div>
+
+    <div class="form-group">
+        <label>Xác nhận mật khẩu</label>
+        <input type="password" name="ConfirmPassword" class="form-control" required />
+    </div>
+
+    <button type="submit" class="btn btn-danger">Đăng ký</button>
+
+    <a href="/Movie/Login" class="btn btn-default">Đăng nhập</a>
+</form>

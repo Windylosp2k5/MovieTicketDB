@@ -1,0 +1,139 @@
+﻿@{
+    ViewBag.Title = "Theaters";
+    Layout = "~/Views/Shared/_Layout.cshtml";
+}
+
+<style>
+
+    .theater-title {
+        text-align: center;
+        font-size: 40px;
+        font-weight: bold;
+        margin-bottom: 40px;
+    }
+
+    .theater-container {
+        display: flex;
+        flex-wrap: wrap;
+        gap: 25px;
+        justify-content: center;
+    }
+
+    .theater-card {
+        width: 350px;
+        background: white;
+        border-radius: 15px;
+        overflow: hidden;
+        box-shadow: 0 5px 15px rgba(0,0,0,.15);
+        transition: .3s;
+    }
+
+        .theater-card:hover {
+            transform: translateY(-8px);
+        }
+
+        .theater-card img {
+            width: 100%;
+            height: 220px;
+            object-fit: cover;
+        }
+
+    .theater-info {
+        padding: 20px;
+    }
+
+    .theater-name {
+        font-size: 24px;
+        font-weight: bold;
+        color: #d10000;
+    }
+
+    .theater-address {
+        margin-top: 10px;
+        color: #555;
+    }
+
+    .theater-btn {
+        display: inline-block;
+        margin-top: 15px;
+        padding: 10px 20px;
+        background: red;
+        color: white;
+        text-decoration: none;
+        border-radius: 8px;
+    }
+</style>
+
+<h2 class="theater-title">
+    HỆ THỐNG RẠP CHIẾU PHIM
+</h2>
+
+<div class="theater-container">
+
+    <div class="theater-card">
+
+        <img src="~/Content/Images/theater1.jpg" />
+
+        <div class="theater-info">
+
+            <div class="theater-name">
+                PHP Cinema Quận 1
+            </div>
+
+            <div class="theater-address">
+                123 Nguyễn Huệ, Quận 1, TP.HCM
+            </div>
+
+            <a href="#" class="theater-btn">
+                Xem lịch chiếu
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="theater-card">
+
+        <img src="~/Content/Images/theater2.jpg" />
+
+        <div class="theater-info">
+
+            <div class="theater-name">
+                PHP Cinema Gò Vấp
+            </div>
+
+            <div class="theater-address">
+                456 Quang Trung, Gò Vấp, TP.HCM
+            </div>
+
+            <a href="#" class="theater-btn">
+                Xem lịch chiếu
+            </a>
+
+        </div>
+
+    </div>
+
+    <div class="theater-card">
+
+        <img src="~/Content/Images/theater3.jpg" />
+
+        <div class="theater-info">
+
+            <div class="theater-name">
+                PHP Cinema Thủ Đức
+            </div>
+
+            <div class="theater-address">
+                789 Võ Văn Ngân, Thủ Đức, TP.HCM
+            </div>
+
+            <a href="#" class="theater-btn">
+                Xem lịch chiếu
+            </a>
+
+        </div>
+
+    </div>
+
+</div>

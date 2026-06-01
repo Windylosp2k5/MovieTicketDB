@@ -1,0 +1,159 @@
+﻿<!DOCTYPE html>
+<html>
+<head>
+    <meta charset="utf-8" />
+    <title>@ViewBag.Title - PHP Cinema</title>
+
+    <link href="~/Content/bootstrap.css" rel="stylesheet" />
+
+    <style>
+        body {
+            background: #f5f2e9;
+            font-family: Arial, sans-serif;
+            margin: 0;
+        }
+
+        .top-bar {
+            background: #222;
+            color: white;
+            padding: 8px 80px;
+            text-align: right;
+            font-size: 13px;
+        }
+
+            .top-bar a {
+                color: white;
+                margin-left: 18px;
+                text-decoration: none;
+                font-weight: bold;
+            }
+
+                .top-bar a:hover {
+                    color: #ff3333;
+                }
+
+        .film-line {
+            height: 8px;
+            background: repeating-linear-gradient(90deg, #e60000 0px, #e60000 12px, white 12px, white 18px);
+        }
+
+        .main-header {
+            background: #111;
+            padding: 14px 80px;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
+        }
+
+        .logo-img {
+            height: 95px;
+            width: auto;
+            transition: 0.3s;
+        }
+
+            .logo-img:hover {
+                transform: scale(1.05);
+            }
+
+        .menu a {
+            color: white;
+            text-decoration: none;
+            margin-left: 28px;
+            font-weight: bold;
+            font-size: 15px;
+        }
+
+            .menu a:hover {
+                color: #ff3333;
+            }
+
+        .ticket-btn {
+            background: red;
+            color: white !important;
+            padding: 12px 22px;
+            border-radius: 6px;
+        }
+
+            .ticket-btn:hover {
+                background: darkred;
+            }
+
+        .content {
+            width: 1200px;
+            max-width: 95%;
+            margin: 35px auto;
+            min-height: 600px;
+        }
+
+        .footer {
+            background: #222;
+            color: white;
+            text-align: center;
+            padding: 25px;
+            margin-top: 50px;
+        }
+
+        .btn-login {
+            background: #fff;
+            color: #222 !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+        }
+
+        .btn-register,
+        .btn-logout {
+            background: red;
+            color: white !important;
+            padding: 5px 12px;
+            border-radius: 4px;
+        }
+    </style>
+</head>
+
+<body>
+
+    <div class="top-bar">
+        <a href="/Movie/Event">NEWS & OFFERS</a>
+        <a href="/Movie/DetailTicket">MY TICKETS</a>
+
+        @if (Session["UserName"] == null)
+        {
+            <a class="btn-login" href="/Movie/Login">Login</a>
+            <a class="btn-register" href="/Movie/Register">Register</a>
+        }
+        else
+        {
+            <span>Xin chào, @Session["FullName"]</span>
+            <a class="btn-logout" href="/Movie/Logout">Logout</a>
+        }
+    </div>
+
+    <div class="film-line"></div>
+
+    <div class="main-header">
+        <a href="/Home/Index">
+            <img src="@Url.Content("~/Content/Images/logo.jpg")"
+                 alt="PHP Cinema Logo"
+                 class="logo-img" />
+        </a>
+
+        <div class="menu">
+            <a href="/Home/Index">HOME</a>
+            <a href="/Movie/Index">MOVIES</a>
+            <a href="/Movie/Theaters">THEATERS</a>
+            <a href="/Movie/Event">EVENT</a>
+            <a class="ticket-btn" href="/Movie/DetailTicket">TICKETS</a>
+        </div>
+    </div>
+
+    <div class="content">
+        @RenderBody()
+    </div>
+
+    <div class="footer">
+        © 2026 PHP Cinema | Website bán vé xem phim
+    </div>
+
+</body>
+</html>
