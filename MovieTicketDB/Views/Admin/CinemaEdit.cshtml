@@ -1,0 +1,9 @@
+@model MovieTicketDB.Models.Cinema
+@{ ViewBag.Title = Model.CinemaID == 0 ? "Thêm rạp" : "Sửa rạp"; }
+<section class="page-shell"><div class="container admin-form-shell"><div class="section-head"><div><div class="eyebrow">Hệ thống rạp</div><h1 class="page-title">@ViewBag.Title</h1></div></div>
+<form class="panel admin-form" method="post">@Html.AntiForgeryToken()@Html.ValidationSummary()<input type="hidden" name="CinemaID" value="@Model.CinemaID" />
+<div class="form-group"><label>Tên rạp</label><input class="field" name="CinemaName" value="@Model.CinemaName" required /></div>
+<div class="form-group"><label>Địa chỉ</label><input class="field" name="Address" value="@Model.Address" required /></div>
+<div class="form-group"><label>Mô tả</label><textarea class="field textarea" name="Description">@Model.Description</textarea></div>
+<div class="form-group"><label>Màu chủ đạo</label><input class="field" name="Accent" value="@Model.Accent" /></div>
+<button class="btn btn-primary" type="submit">Lưu rạp</button> <a class="btn btn-outline" href="@Url.Action("Index")">Hủy</a></form></div></section>

@@ -1,0 +1,9 @@
+@model MovieTicketDB.Models.ShowTime
+@{ ViewBag.Title = Model.ShowTimeID == 0 ? "Thêm suất chiếu" : "Sửa suất chiếu"; var movies=(IEnumerable<MovieTicketDB.Models.Movy>)ViewBag.Movies; var rooms=(IEnumerable<MovieTicketDB.Models.Room>)ViewBag.Rooms; }
+<section class="page-shell"><div class="container admin-form-shell"><div class="section-head"><div><div class="eyebrow">Vận hành rạp</div><h1 class="page-title">@ViewBag.Title</h1></div></div>
+<form class="panel admin-form" method="post">@Html.AntiForgeryToken()@Html.ValidationSummary()<input type="hidden" name="ShowTimeID" value="@Model.ShowTimeID" />
+<div class="form-row"><div class="form-group"><label>Phim</label><select class="field" name="MovieID">@foreach(var item in movies){<option value="@item.MovieID" @(item.MovieID==Model.MovieID?"selected":"")>@item.Title</option>}</select></div>
+<div class="form-group"><label>Rạp / phòng</label><select class="field" name="RoomID">@foreach(var item in rooms){<option value="@item.RoomID" @(item.RoomID==Model.RoomID?"selected":"")>@item.Cinema.CinemaName · @item.RoomName</option>}</select></div></div>
+<div class="form-row"><div class="form-group"><label>Ngày chiếu</label><input class="field" type="date" name="ShowDate" value="@Model.ShowDate.ToString("yyyy-MM-dd")" /></div><div class="form-group"><label>Giờ chiếu</label><input class="field" type="time" name="StartTime" value="@Model.StartTime.ToString(@"hh\:mm")" /></div></div>
+<div class="form-group"><label>Giá vé</label><input class="field" type="number" name="Price" value="@Model.Price.ToString("0")" /></div>
+<button class="btn btn-primary" type="submit">Lưu suất chiếu</button> <a class="btn btn-outline" href="@Url.Action("Index")">Hủy</a></form></div></section>

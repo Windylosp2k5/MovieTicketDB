@@ -1,117 +1,45 @@
-﻿Thay toàn bộ file:
-
-```text
-Views/Movie/ShowTime.cshtml
-```
-
-bằng code này:
-
-```cshtml
-@model IEnumerable<MovieTicketDB.Models.ShowTime>
-
+﻿@model IEnumerable<MovieTicketDB.Models.ShowTime>
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    var movie = ViewBag.Movie as MovieTicketDB.Models.Movy;
+    var movie = (MovieTicketDB.Models.Movy)ViewBag.Movie;
+    ViewBag.Title = "Suất chiếu " + movie.Title;
 }
+<section class="page-shell">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <div class="eyebrow">Bước 1 / 3</div>
+                <h1 class="page-title">Chọn suất chiếu</h1>
+            </div>
+            <p><strong>@movie.Title</strong><br />@movie.Genre · @movie.Duration phút</p>
+        </div>
 
-<style>
-    .showtime-wrapper {
-        background: white;
-        padding: 35px;
-        border-radius: 18px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        margin-top: 30px;
-    }
-
-    .movie-name {
-        font-size: 36px;
-        font-weight: bold;
-        color: #222;
-        margin-bottom: 10px;
-    }
-
-    .showtime-title {
-        font-size: 24px;
-        color: #555;
-        margin-bottom: 25px;
-    }
-
-    .showtime-list {
-        display: flex;
-        flex-wrap: wrap;
-        gap: 18px;
-        margin-top: 30px;
-    }
-
-    .time-card {
-        width: 150px;
-        padding: 18px;
-        background: #f7f7f7;
-        border-radius: 16px;
-        text-align: center;
-        text-decoration: none;
-        color: #222;
-        font-weight: bold;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-        transition: 0.3s;
-    }
-
-        .time-card:hover {
-            background: linear-gradient(135deg,#ff9966,#ff5e62);
-            color: white;
-            text-decoration: none;
-            transform: translateY(-5px);
-        }
-
-    .time {
-        font-size: 22px;
-    }
-
-    .date {
-        font-size: 15px;
-        margin-top: 8px;
-    }
-
-    .price {
-        margin-top: 8px;
-        font-size: 14px;
-        color: red;
-    }
-
-    .time-card:hover .price {
-        color: white;
-    }
-</style>
-
-<div class="showtime-wrapper">
-
-    <div class="movie-name">
-        @movie.Title
-    </div>
-
-    <div class="showtime-title">
-        Chọn suất chiếu
-    </div>
-
-    <hr />
-
-    <div class="showtime-list">
-        @foreach (var item in Model)
-        {
-            <a class="time-card"
-               href="/Movie/SelectSeat/@item.ShowTimeID">
-
-                <div class="time">
-                    @item.StartTime
+        <div class="date-tabs">
+            @foreach (var date in Model.Select(x => x.ShowDate.Date).Distinct())
+            {
+                <div class="date-tab">
+                    <strong>@date.ToString("dd/MM")</strong>
+                    <span>@date.ToString("dddd")</span>
                 </div>
+            }
+        </div>
 
-                <div class="date">
-                    @(item.ShowDate.HasValue ? item.ShowDate.Value.ToString("dd/MM/yyyy") : "")
-                </div>
-
-            </a>
-        }
+        <div class="showtime-groups">
+            @foreach (var cinemaGroup in Model.GroupBy(x => x.Room.Cinema))
+            {
+                <article class="showtime-group">
+                    <h3>@cinemaGroup.Key.CinemaName</h3>
+                    <p style="color:var(--muted)">@cinemaGroup.Key.Address</p>
+                    <div class="time-list">
+                        @foreach (var show in cinemaGroup)
+                        {
+                            <a class="time-chip" href="@Url.Action("SelectSeat", new { showTimeId = show.ShowTimeID })">
+                                @show.StartTime.ToString(@"hh\:mm")
+                                <small>@show.ShowDate.ToString("dd/MM") · @show.Room.RoomName · @show.Price.ToString("N0")đ</small>
+                            </a>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
     </div>
-
-</div>
-```
+</section>

@@ -1,24 +1,18 @@
 ﻿@model MovieTicketDB.Models.Event
-
 @{
-    ViewBag.Title = "Chi tiết sự kiện";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = Model.Title;
 }
-
-<h2 style="color:red;">
-    @Model.Title
-</h2>
-
-<img src="@Url.Content("~/Content/Images/" + Model.Image)"
-     style="width:500px;
-            max-width:100%;
-            margin-bottom:20px;" />
-
-<p style="font-size:18px;">
-    @Model.Description
-</p>
-
-<a href="/Movie/Event"
-   class="btn btn-default">
-    Quay lại
-</a>
+<section class="page-shell">
+    <div class="container" style="max-width:900px">
+        <article class="event-card" style="@("--card-accent:" + Model.Accent + ";min-height:520px")">
+            <span class="event-label">@Model.Label</span>
+            <div>
+                <h1 class="page-title">@Model.Title</h1>
+                <p style="font-size:18px;max-width:650px">@Model.Description</p>
+                <p>Áp dụng tại toàn bộ hệ thống PHP Cinema. Không quy đổi thành tiền mặt và không áp dụng đồng thời với ưu đãi khác.</p>
+                <a class="btn btn-primary" href="@Url.Action("Index")">Chọn phim ngay</a>
+                <a class="btn btn-outline" href="@Url.Action("Event")">Tất cả ưu đãi</a>
+            </div>
+        </article>
+    </div>
+</section>

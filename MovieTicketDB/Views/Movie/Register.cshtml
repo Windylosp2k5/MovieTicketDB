@@ -1,47 +1,28 @@
 ﻿@{
     ViewBag.Title = "Đăng ký";
-    Layout = "~/Views/Shared/_Layout.cshtml";
 }
-
-<h2>Đăng ký tài khoản</h2>
-
-@if (ViewBag.Error != null)
-{
-    <div class="alert alert-danger">@ViewBag.Error</div>
-}
-
-<form method="post">
-    <div class="form-group">
-        <label>Tên đăng nhập</label>
-        <input type="text" name="UserName" class="form-control" required />
+<section class="auth-shell">
+    <div class="auth-card" style="width:min(620px,calc(100% - 32px))">
+        <div class="eyebrow">Thành viên PHP Cinema</div>
+        <h1>Tạo tài khoản</h1>
+        <p>Đăng ký một lần, đặt vé nhanh hơn cho mọi lần xem phim tiếp theo.</p>
+        @if (ViewBag.Error != null) { <div class="alert alert-error">@ViewBag.Error</div> }
+        <form method="post">
+            @Html.AntiForgeryToken()
+            <div class="form-row">
+                <div class="form-group"><label>Tên đăng nhập</label><input class="field" name="userName" required /></div>
+                <div class="form-group"><label>Họ và tên</label><input class="field" name="fullName" required /></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Email</label><input class="field" type="email" name="email" required /></div>
+                <div class="form-group"><label>Số điện thoại</label><input class="field" type="tel" name="phone" required /></div>
+            </div>
+            <div class="form-row">
+                <div class="form-group"><label>Mật khẩu</label><input class="field" type="password" name="password" minlength="6" required /></div>
+                <div class="form-group"><label>Xác nhận mật khẩu</label><input class="field" type="password" name="confirmPassword" minlength="6" required /></div>
+            </div>
+            <button class="btn btn-primary" type="submit">Tạo tài khoản</button>
+        </form>
+        <p style="text-align:center">Đã có tài khoản? <a style="color:var(--accent)" href="@Url.Action("Login")">Đăng nhập</a></p>
     </div>
-
-    <div class="form-group">
-        <label>Họ và tên</label>
-        <input type="text" name="FullName" class="form-control" required />
-    </div>
-
-    <div class="form-group">
-        <label>Gmail</label>
-        <input type="email" name="Email" class="form-control" required />
-    </div>
-
-    <div class="form-group">
-        <label>Phone</label>
-        <input type="text" name="Phone" class="form-control" required />
-    </div>
-
-    <div class="form-group">
-        <label>Mật khẩu</label>
-        <input type="password" name="Password" class="form-control" required />
-    </div>
-
-    <div class="form-group">
-        <label>Xác nhận mật khẩu</label>
-        <input type="password" name="ConfirmPassword" class="form-control" required />
-    </div>
-
-    <button type="submit" class="btn btn-danger">Đăng ký</button>
-
-    <a href="/Movie/Login" class="btn btn-default">Đăng nhập</a>
-</form>
+</section>

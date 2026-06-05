@@ -1,0 +1,15 @@
+@model MovieTicketDB.Models.Movy
+@{ ViewBag.Title = Model.MovieID == 0 ? "Thêm phim" : "Sửa phim"; }
+<section class="page-shell"><div class="container admin-form-shell"><div class="section-head"><div><div class="eyebrow">Quản trị phim</div><h1 class="page-title">@ViewBag.Title</h1></div></div>
+<form class="panel admin-form" method="post">@Html.AntiForgeryToken()@Html.ValidationSummary()
+<input type="hidden" name="MovieID" value="@Model.MovieID" />
+<div class="form-row"><div class="form-group"><label>Tên phim</label><input class="field" name="Title" value="@Model.Title" required /></div><div class="form-group"><label>Thể loại, phân cách bằng dấu phẩy</label><input class="field" name="Genre" value="@Model.Genre" required /></div></div>
+<div class="form-row"><div class="form-group"><label>Đạo diễn</label><input class="field" name="Director" value="@Model.Director" /></div><div class="form-group"><label>Diễn viên, phân cách bằng dấu phẩy</label><input class="field" name="Actors" value="@Model.Actors" /></div></div>
+<div class="form-group"><label>Mô tả</label><textarea class="field textarea" name="Description">@Model.Description</textarea></div>
+<div class="form-row"><div class="form-group"><label>Thời lượng</label><input class="field" type="number" name="Duration" value="@Model.Duration" /></div><div class="form-group"><label>Đánh giá</label><input class="field" type="number" step=".1" name="Rating" value="@Model.Rating" /></div></div>
+<div class="form-row"><div class="form-group"><label>Khởi chiếu</label><input class="field" type="date" name="ReleaseDate" value="@Model.ReleaseDate.ToString("yyyy-MM-dd")" /></div><div class="form-group"><label>Poster</label><select class="field" name="Poster">@for(var i=1;i<=20;i++){var p="movie"+i+".jpg";<option value="@p" @(Model.Poster==p?"selected":"")>@p</option>}</select></div></div>
+<div class="form-row"><div class="form-group"><label>Trạng thái</label><select class="field" name="Status"><option @(Model.Status=="Đang chiếu"?"selected":"")>Đang chiếu</option><option @(Model.Status=="Sắp chiếu"?"selected":"")>Sắp chiếu</option></select></div><div class="form-group"><label>Giới hạn tuổi</label><input class="field" name="AgeLimit" value="@Model.AgeLimit" /></div></div>
+<div class="form-row"><div class="form-group"><label>Quốc gia</label><input class="field" name="Country" value="@Model.Country" /></div><div class="form-group"><label>Định dạng</label><input class="field" name="Format" value="@Model.Format" /></div></div>
+<div class="admin-checks"><label><input type="checkbox" name="IsHot" value="true" @(Model.IsHot?"checked":"") /> Phim hot</label><label><input type="checkbox" name="IsEarlyAccess" value="true" @(Model.IsEarlyAccess?"checked":"") /> Có suất chiếu sớm</label></div>
+<button class="btn btn-primary" type="submit">Lưu phim</button> <a class="btn btn-outline" href="@Url.Action("Index")">Hủy</a>
+</form></div></section>

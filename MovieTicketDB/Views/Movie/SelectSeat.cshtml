@@ -1,215 +1,73 @@
-﻿@model IEnumerable<MovieTicketDB.Models.Seat>
-
+﻿@model MovieTicketDB.Models.SeatSelectionViewModel
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
-    var show = ViewBag.ShowTime as MovieTicketDB.Models.ShowTime;
+    ViewBag.Title = "Chọn ghế";
+    var booked = new System.Collections.Generic.HashSet<string>(Model.BookedSeats);
 }
+<section class="page-shell">
+    <div class="container">
+        <div class="section-head">
+            <div><div class="eyebrow">Bước 2 / 3</div><h1 class="page-title">Chọn ghế ngồi</h1></div>
+            <p>@Model.ShowTime.Movy.Title · @Model.ShowTime.ShowDate.ToString("dd/MM/yyyy") · @Model.ShowTime.StartTime.ToString(@"hh\:mm")</p>
+        </div>
+        @if (TempData["Error"] != null) { <div class="alert alert-error">@TempData["Error"]</div> }
 
-<style>
-
-    .seat-wrapper {
-        background: white;
-        padding: 40px;
-        border-radius: 18px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-    }
-
-    .seat-title {
-        text-align: center;
-        font-size: 38px;
-        font-weight: bold;
-        margin-bottom: 30px;
-    }
-
-    .screen {
-        width: 75%;
-        margin: auto;
-        background: #ddd;
-        padding: 18px;
-        border-radius: 40px;
-        text-align: center;
-        font-weight: bold;
-        margin-bottom: 45px;
-    }
-
-    .seat-grid,
-    .vip-seat-grid {
-        display: flex;
-        flex-wrap: wrap;
-        justify-content: center;
-        gap: 14px;
-    }
-
-    .seat-label input {
-        display: none;
-    }
-
-    .seat {
-        width: 65px;
-        height: 65px;
-        border-radius: 16px;
-        background: #f2f2f2;
-        font-weight: bold;
-        font-size: 16px;
-        transition: 0.3s;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        cursor: pointer;
-        box-shadow: 0 3px 10px rgba(0,0,0,0.08);
-    }
-
-        .seat:hover {
-            transform: translateY(-5px) scale(1.08);
-            box-shadow: 0 8px 18px rgba(0,0,0,0.18);
-        }
-
-    .seat-label input:checked + .seat {
-        background: #2ecc71 !important;
-        color: white;
-    }
-
-    .vip-seat {
-        width: 95px !important;
-        background: #ff4d6d;
-        color: white;
-    }
-
-        .vip-seat:hover {
-            box-shadow: 0 8px 18px rgba(255,77,109,0.45);
-        }
-
-    .seat-label input:checked + .vip-seat {
-        background: #8e44ad !important;
-        color: white;
-    }
-
-    .vip-title {
-        text-align: center;
-        margin-top: 45px;
-        margin-bottom: 20px;
-        font-size: 24px;
-        font-weight: bold;
-        color: #ff4d6d;
-    }
-
-    .summary-box {
-        margin-top: 40px;
-        padding: 25px;
-        border-radius: 15px;
-        background: #fff4f4;
-        text-align: center;
-        font-size: 18px;
-        font-weight: bold;
-    }
-
-    .pay-btn {
-        margin-top: 20px;
-        padding: 14px 35px;
-        border: none;
-        border-radius: 12px;
-        background: red;
-        color: white;
-        font-weight: bold;
-        font-size: 18px;
-    }
-</style>
-
-<div class="seat-wrapper">
-
-    <div class="seat-title">
-
-        CHỌN GHẾ
-
+        <form method="post" action="@Url.Action("Payment")" id="seatForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="showTimeId" value="@Model.ShowTime.ShowTimeID" />
+            <div class="seat-layout">
+                <div class="panel">
+                    <div class="screen"><span>MÀN HÌNH</span></div>
+                    <div class="seat-grid">
+                        @foreach (var seat in Model.Seats)
+                        {
+                            var unavailable = booked.Contains(seat.SeatName);
+                            <label>
+                                <input class="seat-check" type="checkbox" name="seatNames" value="@seat.SeatName"
+                                       data-price="@(seat.Type == "VIP" ? 120000 : Model.ShowTime.Price)"
+                                       @(unavailable ? "disabled" : "") />
+                                <span class="seat @(seat.Type == "VIP" ? "vip" : "") @(unavailable ? "booked" : "")">@seat.SeatName</span>
+                            </label>
+                        }
+                    </div>
+                    <div class="legend">
+                        <span><i></i> Ghế thường</span>
+                        <span><i style="background:#3c2b28"></i> Ghế VIP</span>
+                        <span><i style="background:var(--accent)"></i> Đang chọn</span>
+                        <span><i style="opacity:.28"></i> Đã đặt</span>
+                    </div>
+                </div>
+                <aside class="panel booking-summary">
+                    <div class="eyebrow">Thông tin đặt vé</div>
+                    <h2>@Model.ShowTime.Movy.Title</h2>
+                    <div class="summary-row"><span>Rạp</span><strong>@Model.ShowTime.Room.Cinema.CinemaName</strong></div>
+                    <div class="summary-row"><span>Phòng</span><strong>@Model.ShowTime.Room.RoomName</strong></div>
+                    <div class="summary-row"><span>Suất chiếu</span><strong>@Model.ShowTime.StartTime.ToString(@"hh\:mm"), @Model.ShowTime.ShowDate.ToString("dd/MM")</strong></div>
+                    <div class="summary-row"><span>Ghế</span><strong id="selectedSeats">Chưa chọn</strong></div>
+                    <div class="summary-row"><span>Tổng tiền</span><strong class="total" id="totalMoney">0đ</strong></div>
+                    <button class="btn btn-primary" style="width:100%;margin-top:22px" type="submit">Tiếp tục thanh toán</button>
+                </aside>
+            </div>
+        </form>
     </div>
-
-    <div class="screen">
-
-        SCREEN
-
-    </div>
-
-    <form method="post"
-          action="/Movie/Payment">
-
-        <input type="hidden"
-               name="showTimeId"
-               value="@show.ShowTimeID" />
-
-        <div class="seat-grid">
-
-            @foreach (var item in Model.Where(s => !s.SeatName.Contains("VIP")))
-            {
-                <label class="seat-label">
-
-               <input type="checkbox"
-                      name="seatNames"
-                      value="@item.SeatName" />
-
-                    <span class="seat">
-
-                        @item.SeatName
-
-                    </span>
-
-                </label>
+</section>
+@section scripts {
+<script>
+(function () {
+    var checks = document.querySelectorAll('.seat-check:not([disabled])');
+    var seats = document.getElementById('selectedSeats');
+    var total = document.getElementById('totalMoney');
+    function update() {
+        var selected = [], amount = 0;
+        for (var i = 0; i < checks.length; i++) {
+            if (checks[i].checked) {
+                selected.push(checks[i].value);
+                amount += parseInt(checks[i].getAttribute('data-price'), 10);
             }
-
-        </div>
-
-        <div class="vip-title">
-
-            GHẾ ĐÔI VIP
-
-        </div>
-
-        <div class="vip-seat-grid">
-
-            @foreach (var item in Model.Where(s => s.SeatName.Contains("VIP")))
-            {
-                <label class="seat-label">
-<input type="checkbox"
-       name="seatNames"
-       value="@item.SeatName" />
-
-                    <span class="seat vip-seat">
-
-                        @item.SeatName
-
-                    </span>
-
-                </label>
-            }
-
-        </div>
-
-        <div class="summary-box">
-
-            <p>
-
-                Ghế thường: 50,000 VNĐ / ghế
-
-            </p>
-
-            <p>
-
-                Ghế VIP: 100,000 VNĐ / ghế đôi
-
-            </p>
-
-            <hr />
-
-
-            <button type="submit"
-                    class="pay-btn">
-
-                Tiến hành thanh toán
-
-            </button>
-
-        </div>
-
-    </form>
-
-</div>
-
+        }
+        seats.textContent = selected.length ? selected.join(', ') : 'Chưa chọn';
+        total.textContent = amount.toLocaleString('vi-VN') + 'đ';
+    }
+    for (var i = 0; i < checks.length; i++) checks[i].addEventListener('change', update);
+})();
+</script>
+}

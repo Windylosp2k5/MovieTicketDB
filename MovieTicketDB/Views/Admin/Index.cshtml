@@ -1,0 +1,54 @@
+@model MovieTicketDB.Models.AdminDashboardViewModel
+@{ ViewBag.Title = "Quản trị hệ thống"; }
+<section class="page-shell admin-page">
+    <div class="container">
+        <div class="section-head"><div><div class="eyebrow">PHP Cinema Control Center</div><h1 class="page-title">Quản trị hệ thống</h1></div><a class="btn btn-outline" href="@Url.Action("Index","Movie")">Xem website</a></div>
+        @if (TempData["AdminSuccess"] != null) { <div class="alert alert-success">@TempData["AdminSuccess"]</div> }
+        <div class="admin-stats">
+            <div><span>Phim</span><strong>@Model.Movies.Count()</strong></div><div><span>Suất chiếu</span><strong>@Model.TotalShowTimes</strong></div><div><span>Người dùng</span><strong>@Model.Users.Count()</strong></div><div><span>Vé đã bán</span><strong>@Model.Bookings.Count()</strong></div><div><span>Doanh thu</span><strong>@Model.Revenue.ToString("N0")đ</strong></div>
+        </div>
+        <nav class="admin-nav"><a href="#movies">Phim</a><a href="#cinemas">Rạp</a><a href="#events">Sự kiện</a><a href="#users">Người dùng</a><a href="#showtimes">Lịch chiếu</a><a href="#bookings">Đơn vé</a></nav>
+
+        <section class="admin-panel" id="movies">
+            <div class="admin-panel-head"><div><h2>Quản lý phim</h2><p>Thêm, sửa, xóa và đánh dấu phim hot/suất sớm.</p></div><a class="btn btn-primary" href="@Url.Action("MovieEdit")">Thêm phim</a></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Phim</th><th>Thể loại</th><th>Trạng thái</th><th>Đánh giá</th><th></th></tr></thead><tbody>
+                @foreach (var item in Model.Movies) { <tr><td><div class="admin-movie"><img src="@Url.Content("~/Content/images/" + item.Poster)" alt="" /><strong>@item.Title</strong></div></td><td>@item.Genre</td><td>@item.Status @(item.IsHot ? "· Hot" : "") @(item.IsEarlyAccess ? "· Suất sớm" : "")</td><td>@item.Rating</td><td class="admin-actions"><a href="@Url.Action("MovieEdit", new { id=item.MovieID })">Sửa</a><form method="post" action="@Url.Action("MovieDelete")" onsubmit="return confirm('Xóa phim này?')">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.MovieID" /><button type="submit">Xóa</button></form></td></tr> }
+            </tbody></table></div>
+        </section>
+
+        <section class="admin-panel" id="cinemas">
+            <div class="admin-panel-head"><div><h2>Hệ thống rạp</h2><p>Quản lý địa điểm, phòng ghế mặc định và lịch chiếu liên quan.</p></div><a class="btn btn-primary" href="@Url.Action("CinemaEdit")">Thêm rạp</a></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Rạp</th><th>Địa chỉ</th><th>Mô tả</th><th></th></tr></thead><tbody>
+                @foreach(var item in Model.Cinemas){<tr><td><strong>@item.CinemaName</strong></td><td>@item.Address</td><td>@item.Description</td><td class="admin-actions"><a href="@Url.Action("CinemaEdit",new{id=item.CinemaID})">Sửa</a><form method="post" action="@Url.Action("CinemaDelete")">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.CinemaID"/><button type="submit">Xóa</button></form></td></tr>}
+            </tbody></table></div>
+        </section>
+
+        <section class="admin-panel" id="events">
+            <div class="admin-panel-head"><div><h2>Sự kiện & ưu đãi</h2><p>Quản lý nội dung quảng bá trên trang chủ.</p></div><a class="btn btn-primary" href="@Url.Action("EventEdit")">Thêm sự kiện</a></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Sự kiện</th><th>Nhãn</th><th>Hết hạn</th><th></th></tr></thead><tbody>
+                @foreach (var item in Model.Events) { <tr><td>@item.Title</td><td>@item.Label</td><td>@item.EndDate.ToString("dd/MM/yyyy")</td><td class="admin-actions"><a href="@Url.Action("EventEdit", new { id=item.EventID })">Sửa</a><form method="post" action="@Url.Action("EventDelete")">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.EventID" /><button type="submit">Xóa</button></form></td></tr> }
+            </tbody></table></div>
+        </section>
+
+        <section class="admin-panel" id="users">
+            <div class="admin-panel-head"><div><h2>Người dùng & phân quyền</h2><p>Admin có toàn quyền quản lý nội dung và dữ liệu vận hành.</p></div></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Tài khoản</th><th>Thông tin</th><th>Quyền</th><th>Cập nhật</th></tr></thead><tbody>
+                @foreach (var item in Model.Users) { <tr><td><strong>@item.UserName</strong><br /><small>@item.FullName</small></td><td>@item.Email<br />@item.Phone</td><td>@item.Role</td><td>@if(item.UserName != "admin"){<form class="role-form" method="post" action="@Url.Action("SetRole")">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.UserID" /><select name="role"><option value="Customer" @(item.Role=="Customer"?"selected":"")>Customer</option><option value="Admin" @(item.Role=="Admin"?"selected":"")>Admin</option></select><button type="submit">Lưu</button></form>}else{<span>Tài khoản gốc</span>}</td></tr> }
+            </tbody></table></div>
+        </section>
+
+        <section class="admin-panel" id="showtimes">
+            <div class="admin-panel-head"><div><h2>Lịch chiếu</h2><p>30 suất gần nhất. Có thể quản lý từng suất hoặc tạo lại lịch hàng loạt.</p></div><div><a class="btn btn-primary" href="@Url.Action("ShowTimeEdit")">Thêm suất</a> <form style="display:inline" method="post" action="@Url.Action("RebuildShowTimes")">@Html.AntiForgeryToken()<button class="btn btn-outline" type="submit">Tạo lại lịch</button></form></div></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Phim</th><th>Rạp / Phòng</th><th>Ngày</th><th>Giờ</th><th>Giá</th><th></th></tr></thead><tbody>
+                @foreach (var item in Model.ShowTimes) { <tr><td>@item.Movy.Title</td><td>@item.Room.Cinema.CinemaName · @item.Room.RoomName</td><td>@item.ShowDate.ToString("dd/MM/yyyy")</td><td>@item.StartTime.ToString(@"hh\:mm")</td><td>@item.Price.ToString("N0")đ</td><td class="admin-actions"><a href="@Url.Action("ShowTimeEdit",new{id=item.ShowTimeID})">Sửa</a><form method="post" action="@Url.Action("ShowTimeDelete")">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.ShowTimeID"/><button type="submit">Xóa</button></form></td></tr> }
+            </tbody></table></div>
+        </section>
+
+        <section class="admin-panel" id="bookings">
+            <div class="admin-panel-head"><div><h2>Đơn vé & doanh thu</h2><p>Theo dõi giao dịch đã phát hành vé.</p></div></div>
+            <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Mã vé</th><th>Khách hàng</th><th>Suất chiếu</th><th>Ghế</th><th>Thành tiền</th><th>Trạng thái</th></tr></thead><tbody>
+                @foreach (var item in Model.Bookings) { var user=Model.Users.FirstOrDefault(x=>x.UserID==item.UserID); var show=MovieTicketDB.Models.CinemaStore.ShowTimes.FirstOrDefault(x=>x.ShowTimeID==item.ShowTimeID); <tr><td>@item.Code</td><td>@(user==null?"N/A":user.FullName)</td><td>@(show==null?"N/A":show.Movy.Title)</td><td>@string.Join(", ",item.SeatNames)</td><td>@item.TotalMoney.ToString("N0")đ</td><td><form class="role-form" method="post" action="@Url.Action("SetBookingStatus")">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.BookingID"/><select name="status"><option @(item.Status=="Đã thanh toán"?"selected":"")>Đã thanh toán</option><option @(item.Status=="Đã sử dụng"?"selected":"")>Đã sử dụng</option><option @(item.Status=="Đã hủy"?"selected":"")>Đã hủy</option></select><button type="submit">Lưu</button></form></td></tr> }
+            </tbody></table></div>
+        </section>
+    </div>
+</section>

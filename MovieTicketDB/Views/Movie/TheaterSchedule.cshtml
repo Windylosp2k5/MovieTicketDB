@@ -1,0 +1,31 @@
+﻿@model IEnumerable<MovieTicketDB.Models.ShowTime>
+@{
+    var cinema = (MovieTicketDB.Models.Cinema)ViewBag.Cinema;
+    ViewBag.Title = "Lịch chiếu " + cinema.CinemaName;
+}
+<section class="page-shell">
+    <div class="container">
+        <div class="section-head">
+            <div><div class="eyebrow">Lịch chiếu tại rạp</div><h1 class="page-title">@cinema.CinemaName</h1></div>
+            <p>@cinema.Address<br />@cinema.Description</p>
+        </div>
+        <div class="showtime-groups">
+            @foreach (var movieGroup in Model.GroupBy(x => x.Movy).OrderBy(x => x.Key.Title))
+            {
+                <article class="showtime-group">
+                    <h3>@movieGroup.Key.Title</h3>
+                    <p style="color:var(--muted)">@movieGroup.Key.Genre · @movieGroup.Key.Duration phút · @movieGroup.Key.AgeLimit</p>
+                    <div class="time-list">
+                        @foreach (var show in movieGroup)
+                        {
+                            <a class="time-chip" href="@Url.Action("SelectSeat", new { showTimeId = show.ShowTimeID })">
+                                @show.StartTime.ToString(@"hh\:mm")
+                                <small>@show.ShowDate.ToString("dd/MM") · @show.Room.RoomName</small>
+                            </a>
+                        }
+                    </div>
+                </article>
+            }
+        </div>
+    </div>
+</section>

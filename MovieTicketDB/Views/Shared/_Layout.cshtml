@@ -1,159 +1,75 @@
 ﻿<!DOCTYPE html>
-<html>
+<html lang="vi">
 <head>
     <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <meta name="description" content="PHP Cinema - Đặt vé xem phim trực tuyến nhanh chóng và tiện lợi." />
     <title>@ViewBag.Title - PHP Cinema</title>
-
-    <link href="~/Content/bootstrap.css" rel="stylesheet" />
-
-    <style>
-        body {
-            background: #f5f2e9;
-            font-family: Arial, sans-serif;
-            margin: 0;
-        }
-
-        .top-bar {
-            background: #222;
-            color: white;
-            padding: 8px 80px;
-            text-align: right;
-            font-size: 13px;
-        }
-
-            .top-bar a {
-                color: white;
-                margin-left: 18px;
-                text-decoration: none;
-                font-weight: bold;
-            }
-
-                .top-bar a:hover {
-                    color: #ff3333;
-                }
-
-        .film-line {
-            height: 8px;
-            background: repeating-linear-gradient(90deg, #e60000 0px, #e60000 12px, white 12px, white 18px);
-        }
-
-        .main-header {
-            background: #111;
-            padding: 14px 80px;
-            display: flex;
-            align-items: center;
-            justify-content: space-between;
-            box-shadow: 0 3px 12px rgba(0,0,0,0.12);
-        }
-
-        .logo-img {
-            height: 95px;
-            width: auto;
-            transition: 0.3s;
-        }
-
-            .logo-img:hover {
-                transform: scale(1.05);
-            }
-
-        .menu a {
-            color: white;
-            text-decoration: none;
-            margin-left: 28px;
-            font-weight: bold;
-            font-size: 15px;
-        }
-
-            .menu a:hover {
-                color: #ff3333;
-            }
-
-        .ticket-btn {
-            background: red;
-            color: white !important;
-            padding: 12px 22px;
-            border-radius: 6px;
-        }
-
-            .ticket-btn:hover {
-                background: darkred;
-            }
-
-        .content {
-            width: 1200px;
-            max-width: 95%;
-            margin: 35px auto;
-            min-height: 600px;
-        }
-
-        .footer {
-            background: #222;
-            color: white;
-            text-align: center;
-            padding: 25px;
-            margin-top: 50px;
-        }
-
-        .btn-login {
-            background: #fff;
-            color: #222 !important;
-            padding: 5px 12px;
-            border-radius: 4px;
-        }
-
-        .btn-register,
-        .btn-logout {
-            background: red;
-            color: white !important;
-            padding: 5px 12px;
-            border-radius: 4px;
-        }
-    </style>
+    <link href="@Url.Content("~/Content/Site.css")" rel="stylesheet" />
 </head>
-
 <body>
-
-    <div class="top-bar">
-        <a href="/Movie/Event">NEWS & OFFERS</a>
-        <a href="/Movie/DetailTicket">MY TICKETS</a>
-
-        @if (Session["UserName"] == null)
-        {
-            <a class="btn-login" href="/Movie/Login">Login</a>
-            <a class="btn-register" href="/Movie/Register">Register</a>
-        }
-        else
-        {
-            <span>Xin chào, @Session["FullName"]</span>
-            <a class="btn-logout" href="/Movie/Logout">Logout</a>
-        }
-    </div>
-
-    <div class="film-line"></div>
-
-    <div class="main-header">
-        <a href="/Home/Index">
-            <img src="@Url.Content("~/Content/Images/logo.jpg")"
-                 alt="PHP Cinema Logo"
-                 class="logo-img" />
-        </a>
-
-        <div class="menu">
-            <a href="/Home/Index">HOME</a>
-            <a href="/Movie/Index">MOVIES</a>
-            <a href="/Movie/Theaters">THEATERS</a>
-            <a href="/Movie/Event">EVENT</a>
-            <a class="ticket-btn" href="/Movie/DetailTicket">TICKETS</a>
+    <header class="site-header">
+        <div class="container nav">
+            <a class="brand" href="@Url.Action("Index", "Movie")">
+                <span class="brand-mark brand-mark-php"><span>PHP</span></span>
+                <span>PHP CINEMA</span>
+            </a>
+            <nav class="nav-links" aria-label="Điều hướng chính">
+                <a href="@Url.Action("Index", "Movie")">Phim</a>
+                <a href="@Url.Action("Theaters", "Movie")">Rạp chiếu</a>
+                <a href="@Url.Action("Event", "Movie")">Ưu đãi</a>
+                <a href="@Url.Action("DetailTicket", "Movie")">Vé của tôi</a>
+            </nav>
+            <div class="nav-actions">
+                @if (Session["UserID"] == null)
+                {
+                    <a class="btn btn-ghost" href="@Url.Action("Login", "Movie")">Đăng nhập</a>
+                    <a class="btn btn-primary" href="@Url.Action("Register", "Movie")">Đăng ký</a>
+                }
+                else
+                {
+                    <span class="user-name">@Session["FullName"]</span>
+                    if ((Session["Role"] as string) == "Admin")
+                    {
+                        <a class="btn btn-primary" href="@Url.Action("Index", "Admin")">Quản trị</a>
+                    }
+                    <a class="btn btn-outline" href="@Url.Action("DetailTicket", "Movie")">Vé của tôi</a>
+                    <a class="btn btn-ghost" href="@Url.Action("Logout", "Movie")">Thoát</a>
+                }
+            </div>
         </div>
-    </div>
+    </header>
 
-    <div class="content">
+    <main class="main-content">
         @RenderBody()
-    </div>
+    </main>
 
-    <div class="footer">
-        © 2026 PHP Cinema | Website bán vé xem phim
-    </div>
-
+    <footer class="site-footer">
+        <div class="container">
+            <div class="footer-grid">
+                <div>
+                    <a class="brand" href="@Url.Action("Index", "Movie")">
+                        <span class="brand-mark brand-mark-php"><span>PHP</span></span>
+                        <span>PHP CINEMA</span>
+                    </a>
+                    <p>Không gian điện ảnh hiện đại, nơi mỗi bộ phim trở thành một trải nghiệm đáng nhớ.</p>
+                </div>
+                <div>
+                    <h4>Khám phá</h4>
+                    <a href="@Url.Action("Index", "Movie")">Phim đang chiếu</a>
+                    <a href="@Url.Action("Theaters", "Movie")">Hệ thống rạp</a>
+                    <a href="@Url.Action("Event", "Movie")">Khuyến mãi</a>
+                </div>
+                <div>
+                    <h4>Hỗ trợ</h4>
+                    <a href="mailto:support@phpcinema.vn">support@phpcinema.vn</a>
+                    <a href="tel:19001234">1900 1234</a>
+                    <span>08:00 - 23:00 hàng ngày</span>
+                </div>
+            </div>
+            <div class="footer-bottom">© @DateTime.Now.Year PHP Cinema. Website đặt vé xem phim.</div>
+        </div>
+    </footer>
+    @RenderSection("scripts", required: false)
 </body>
 </html>

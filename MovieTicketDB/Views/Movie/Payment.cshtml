@@ -1,205 +1,88 @@
-﻿
+@model MovieTicketDB.Models.PaymentViewModel
 @{
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Thanh toán";
 }
-
-<style>
-
-    .payment-wrapper {
-        background: white;
-        padding: 40px;
-        border-radius: 18px;
-        box-shadow: 0 5px 20px rgba(0,0,0,0.1);
-        margin-top: 30px;
-    }
-
-    .payment-title {
-        text-align: center;
-        font-size: 38px;
-        font-weight: bold;
-        margin-bottom: 35px;
-    }
-
-    .payment-info {
-        background: #fff4f4;
-        padding: 25px;
-        border-radius: 14px;
-        font-size: 20px;
-        line-height: 2;
-    }
-
-        .payment-info span {
-            color: red;
-            font-weight: bold;
-        }
-
-    .payment-methods {
-        display: flex;
-        justify-content: center;
-        gap: 18px;
-        flex-wrap: wrap;
-        margin-top: 25px;
-    }
-
-    .payment-card input {
-        display: none;
-    }
-
-    .payment-card span {
-        width: 160px;
-        height: 90px;
-        background: white;
-        border: 2px solid #eee;
-        border-radius: 14px;
-        display: flex;
-        align-items: center;
-        justify-content: center;
-        font-size: 18px;
-        font-weight: bold;
-        cursor: pointer;
-        box-shadow: 0 3px 12px rgba(0,0,0,0.1);
-        transition: 0.3s;
-    }
-
-        .payment-card span:hover {
-            border-color: red;
-            color: red;
-            transform: translateY(-4px);
-        }
-
-    .payment-card input:checked + span {
-        border-color: red;
-        background: #fff0f0;
-        color: red;
-        transform: translateY(-4px);
-    }
-
-    .pay-button {
-        text-align: center;
-        margin-top: 35px;
-    }
-
-    .pay-btn {
-        border: none;
-        padding: 16px 45px;
-        border-radius: 14px;
-        background: linear-gradient(135deg,#ff9966,#ff5e62);
-        color: white;
-        font-size: 20px;
-        font-weight: bold;
-        transition: 0.3s;
-    }
-
-        .pay-btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 5px 15px rgba(255,94,98,0.35);
-        }
-</style>
-
-<div class="payment-wrapper">
-
-    <div class="payment-title">
-
-        THANH TOÁN VÉ PHIM
-
-    </div>
-
-    <div class="payment-info">
-
-        <p>
-            🎟 Ghế đã chọn:
-            <span>@ViewBag.SeatNames</span>
-        </p>
-
-        <p>
-            👥 Tổng số ghế:
-            <span>@ViewBag.TotalSeats</span>
-        </p>
-
-        <p>
-            💰 Tổng tiền:
-            <span>
-                @String.Format("{0:N0}", ViewBag.TotalMoney) VNĐ
-            </span>
-        </p>
-
-    </div>
-
-    <h3 style="margin-top:30px; text-align:center;">
-
-        Chọn phương thức thanh toán
-
-    </h3>
-
-    <form method="post"
-          action="/Movie/ConfirmPayment">
-
-        <div class="payment-methods">
-
-            <label class="payment-card">
-
-                <input type="radio"
-                       name="paymentMethod"
-                       value="PayPal" />
-
-                <span>PayPal</span>
-
-            </label>
-
-            <label class="payment-card">
-
-                <input type="radio"
-                       name="paymentMethod"
-                       value="Apple Pay" />
-
-                <span>Apple Pay</span>
-
-            </label>
-
-            <label class="payment-card">
-
-                <input type="radio"
-                       name="paymentMethod"
-                       value="MoMo" />
-
-                <span>MoMo</span>
-
-            </label>
-
-            <label class="payment-card">
-
-                <input type="radio"
-                       name="paymentMethod"
-                       value="Zalo Pay" />
-
-                <span>Zalo Pay</span>
-
-            </label>
-
-            <label class="payment-card">
-
-                <input type="radio"
-                       name="paymentMethod"
-                       value="Ngân Hàng" />
-
-                <span>Ngân Hàng</span>
-
-            </label>
-
+<section class="page-shell">
+    <div class="container payment-page">
+        <div class="section-head">
+            <div><div class="eyebrow">Bước 3 / 3</div><h1 class="page-title">Thanh toán</h1></div>
+            <p>Giao dịch <strong>@Model.PaymentCode</strong> hết hạn lúc <strong>@Model.ExpiresAt.ToString("HH:mm")</strong>.</p>
         </div>
 
-        <div class="pay-button">
+        @if (!ViewData.ModelState.IsValid)
+        {
+            <div class="alert alert-error">@Html.ValidationSummary()</div>
+        }
 
-            <button type="submit"
-                    class="pay-btn">
+        <form method="post" action="@Url.Action("ConfirmPayment")" id="paymentForm">
+            @Html.AntiForgeryToken()
+            <div class="payment-layout">
+                <div class="panel">
+                    <div class="summary-row"><span>Phim</span><strong>@Model.ShowTime.Movy.Title</strong></div>
+                    <div class="summary-row"><span>Rạp</span><strong>@Model.ShowTime.Room.Cinema.CinemaName</strong></div>
+                    <div class="summary-row"><span>Suất chiếu</span><strong>@Model.ShowTime.StartTime.ToString(@"hh\:mm") · @Model.ShowTime.ShowDate.ToString("dd/MM/yyyy")</strong></div>
+                    <div class="summary-row"><span>Ghế</span><strong>@string.Join(", ", Model.SeatNames)</strong></div>
+                    <div class="summary-row"><span>Thành tiền</span><strong class="total">@Model.TotalMoney.ToString("N0")đ</strong></div>
 
-                THANH TOÁN
+                    <h3>Phương thức thanh toán</h3>
+                    <div class="payment-methods">
+                        <label class="payment-option"><input type="radio" name="paymentMethod" value="QR" checked /><span>QR ngân hàng</span></label>
+                        <label class="payment-option"><input type="radio" name="paymentMethod" value="MOMO" /><span>MoMo</span></label>
+                        <label class="payment-option"><input type="radio" name="paymentMethod" value="ZALOPAY" /><span>ZaloPay</span></label>
+                        <label class="payment-option"><input type="radio" name="paymentMethod" value="CARD" /><span>Thẻ ngân hàng</span></label>
+                        <label class="payment-option"><input type="radio" name="paymentMethod" value="COUNTER" /><span>Tại quầy</span></label>
+                    </div>
 
-            </button>
+                    <label class="payment-confirm" id="paymentConfirm">
+                        <input type="checkbox" name="paymentConfirmed" value="true" />
+                        <span>Tôi đã chuyển đúng số tiền và nội dung thanh toán.</span>
+                    </label>
+                    <button class="btn btn-primary payment-submit" type="submit">Xác nhận thanh toán @Model.TotalMoney.ToString("N0")đ</button>
+                    <p class="payment-note">Bản demo mô phỏng xác nhận giao dịch. Hệ thống thực tế cần webhook từ ngân hàng hoặc cổng thanh toán.</p>
+                </div>
 
-        </div>
+                <aside class="panel qr-panel" id="qrPanel">
+                    <div class="eyebrow">Quét để thanh toán</div>
+                    <div class="qr-frame">
+                        <img src="data:image/png;base64,@Model.QrCodeBase64" alt="Mã QR thanh toán @Model.PaymentCode" />
+                    </div>
+                    <div class="qr-bank">PHP CINEMA DEMO BANK</div>
+                    <div class="qr-account">Số tài khoản: <strong>1900 1234 5678</strong></div>
+                    <div class="qr-amount">@Model.TotalMoney.ToString("N0")đ</div>
+                    <div class="qr-content">Nội dung: <strong>@Model.PaymentCode</strong></div>
+                    <div class="qr-timer">Còn lại <strong id="countdown" data-expire="@Model.ExpiresAt.ToString("o")">10:00</strong></div>
+                </aside>
+            </div>
+        </form>
+    </div>
+</section>
 
-    </form>
+@section scripts {
+<script>
+(function () {
+    var methods = document.querySelectorAll('input[name="paymentMethod"]');
+    var qrPanel = document.getElementById('qrPanel');
+    var confirmBox = document.getElementById('paymentConfirm');
+    function updateMethod() {
+        var selected = document.querySelector('input[name="paymentMethod"]:checked');
+        var isQr = selected && selected.value === 'QR';
+        qrPanel.style.display = isQr ? '' : 'none';
+        confirmBox.style.display = isQr ? 'flex' : 'none';
+    }
+    for (var i = 0; i < methods.length; i++) methods[i].addEventListener('change', updateMethod);
+    updateMethod();
 
-</div>
-
+    var countdown = document.getElementById('countdown');
+    var expires = new Date(countdown.getAttribute('data-expire')).getTime();
+    function tick() {
+        var seconds = Math.max(0, Math.floor((expires - Date.now()) / 1000));
+        var minutes = Math.floor(seconds / 60);
+        var remain = seconds % 60;
+        countdown.textContent = minutes + ':' + (remain < 10 ? '0' : '') + remain;
+        if (seconds === 0) countdown.parentElement.classList.add('expired');
+    }
+    tick();
+    setInterval(tick, 1000);
+})();
+</script>
+}

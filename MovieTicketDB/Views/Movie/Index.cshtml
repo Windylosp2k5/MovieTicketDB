@@ -1,264 +1,128 @@
-﻿@using PagedList.Mvc
-@model PagedList.IPagedList<MovieTicketDB.Models.Movy>
-
+@model MovieTicketDB.Models.MovieIndexViewModel
+@using PagedList.Mvc
 @{
-    ViewBag.Title = "Danh sách phim";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Đặt vé xem phim";
+    var slides = Model.FeaturedMovies.ToList();
 }
 
-<style>
-
-    .movie-title {
-        text-align: center;
-        color: #222;
-        font-weight: bold;
-        margin-bottom: 25px;
-        text-transform: uppercase;
-    }
-
-    /* FILTER */
-
-    .movie-filter {
-        display: flex;
-        justify-content: flex-end;
-        margin-bottom: 30px;
-    }
-
-        .movie-filter form {
-            display: flex;
-            gap: 10px;
-        }
-
-    .movie-dropdown {
-        width: 190px;
-        padding: 12px 15px;
-        border-radius: 12px;
-        border: none;
-        background: white;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.1);
-        font-weight: bold;
-        outline: none;
-    }
-
-    .filter-btn {
-        border: none;
-        padding: 12px 18px;
-        border-radius: 12px;
-        background: linear-gradient(135deg,#ff9966,#ff5e62);
-        color: white;
-        font-weight: bold;
-        transition: 0.3s;
-    }
-
-        .filter-btn:hover {
-            transform: translateY(-2px);
-            box-shadow: 0 4px 12px rgba(255,94,98,0.35);
-        }
-
-    /* MOVIE CARD */
-
-    .movie-card {
-        background: white;
-        border-radius: 12px;
-        padding: 12px;
-        margin-bottom: 35px;
-        box-shadow: 0 4px 12px rgba(0,0,0,0.12);
-        transition: 0.3s;
-        min-height: 560px;
-    }
-
-        .movie-card:hover {
-            transform: translateY(-6px);
-        }
-
-        .movie-card img {
-            width: 100%;
-            height: 330px;
-            object-fit: cover;
-            border-radius: 10px;
-        }
-
-        .movie-card h4 {
-            font-weight: bold;
-            min-height: 55px;
-            margin-top: 15px;
-        }
-
-    .movie-info {
-        color: #555;
-        font-size: 15px;
-        min-height: 55px;
-    }
-
-    .movie-buttons {
-        display: flex;
-        gap: 8px;
-        margin-top: 15px;
-    }
-
-        .movie-buttons a {
-            flex: 1;
-            font-weight: bold;
-            border-radius: 6px;
-        }
-
-    /* PAGE BUTTON */
-
-    .page-buttons {
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        gap: 14px;
-        margin-top: 45px;
-        margin-bottom: 30px;
-    }
-
-    .page-btn {
-        width: 58px;
-        height: 58px;
-        background: white;
-        border-radius: 18px;
-        display: flex;
-        justify-content: center;
-        align-items: center;
-        text-decoration: none;
-        color: #555;
-        font-size: 24px;
-        font-weight: bold;
-        box-shadow: 0 2px 10px rgba(0,0,0,0.08);
-        transition: 0.3s;
-    }
-
-        .page-btn:hover {
-            text-decoration: none;
-            transform: translateY(-3px);
-            color: white;
-            background: #ff8359;
-        }
-
-        .page-btn.active {
-            background: linear-gradient(135deg,#ff9966,#ff5e62);
-            color: white;
-            box-shadow: 0 5px 15px rgba(255,94,98,0.35);
-        }
-</style>
-
-<h2 class="movie-title">Danh sách phim</h2>
-
-<div class="movie-filter">
-
-    <form method="get">
-
-        <select name="size"
-                class="movie-dropdown">
-
-            <option value="3"
-                    @(ViewBag.Size == 3 ? "selected" : "")>
-
-                3 phim / trang
-
-            </option>
-
-            <option value="6"
-                    @(ViewBag.Size == 6 ? "selected" : "")>
-
-                6 phim / trang
-
-            </option>
-
-            <option value="9"
-                    @(ViewBag.Size == 9 ? "selected" : "")>
-
-                9 phim / trang
-
-            </option>
-
-        </select>
-
-        <button type="submit"
-                class="filter-btn">
-
-            Apply
-
-        </button>
-
-    </form>
-
-</div>
-
-<div class="row">
-
-    @foreach (var item in Model)
+<section class="hero-slider" id="heroSlider">
+    <div class="cinema-particles" aria-hidden="true"><i></i><i></i><i></i><i></i><i></i><i></i></div>
+    <div class="film-strip film-strip-top" aria-hidden="true"></div>
+    <div class="film-strip film-strip-bottom" aria-hidden="true"></div>
+    @for (var i = 0; i < slides.Count; i++)
     {
-        <div class="col-md-3 col-sm-6">
-
-            <div class="movie-card">
-
-                <img src="@Url.Content("~/Content/Images/" + item.Poster)" />
-
-                <h4>@item.Title</h4>
-
-                <div class="movie-info">
-
-                    <p>
-                        <b>Thể loại:</b> @item.Genre
-                    </p>
-
-                    <p>
-                        <b>Thời lượng:</b> @item.Duration phút
-                    </p>
-
+        var movie = slides[i];
+        <article class="hero-slide @(i == 0 ? "active" : "")">
+            <div class="hero-backdrop" style="background-image:url('@Url.Content("~/Content/images/" + movie.Poster)')"></div>
+            <div class="container hero-slide-content">
+                <div class="hero-copy-block">
+                    <div class="hero-rank"><span>0@(i + 1)</span> PHP Cinema Selection</div>
+                    <div class="eyebrow">Bom tấn nổi bật tuần này</div>
+                    <h1>@movie.Title</h1>
+                    <p class="hero-copy">@movie.Description</p>
+                    <div class="hero-meta"><span>@movie.Genre</span><span>@movie.Duration phút</span><span>@movie.AgeLimit</span><span>@movie.Rating/10</span></div>
+                    <div class="hero-actions">
+                        <a class="btn btn-primary" href="@Url.Action("BuyTicket", new { id = movie.MovieID })">Đặt vé ngay</a>
+                        <a class="btn btn-outline" href="@Url.Action("Detail", new { id = movie.MovieID })">Xem chi tiết</a>
+                    </div>
                 </div>
-
-                <div class="movie-buttons">
-
-                    <a href="/Movie/Detail/@item.MovieID"
-                       class="btn btn-primary">
-
-                        Chi tiết
-
-                    </a>
-
-                    <a href="/Movie/ShowTime/@item.MovieID"
-                       class="btn btn-danger">
-
-                        Mua vé
-
-                    </a>
-
+                <div class="hero-poster-wrap">
+                    <span class="poster-glow"></span>
+                    <img class="hero-poster" src="@Url.Content("~/Content/images/" + movie.Poster)" alt="Poster @movie.Title" />
+                    <div class="poster-rating"><strong>@movie.Rating</strong><small>IMDb</small></div>
                 </div>
-
             </div>
+        </article>
+    }
+    <button class="slider-arrow slider-prev" type="button" aria-label="Banner trước">‹</button>
+    <button class="slider-arrow slider-next" type="button" aria-label="Banner tiếp theo">›</button>
+    <div class="slider-dots">
+        @for (var i = 0; i < slides.Count; i++) { <button class="@(i == 0 ? "active" : "")" type="button" data-slide="@i" aria-label="Banner @(i + 1)"></button> }
+    </div>
+    <div class="slider-progress"><span></span></div>
+</section>
 
+<section class="section section-cream" id="movies">
+    <div class="container">
+        <div class="section-head">
+            <div><div class="eyebrow">Kho phim PHP Cinema</div><h2>Tất cả phim</h2></div>
+            <p>20 bộ phim, lịch chiếu trong 7 ngày và nhiều định dạng phòng chiếu.</p>
         </div>
-    }
-
-</div>
-
-<div class="page-buttons">
-
-    @for (int i = 1; i <= Model.PageCount; i++)
-    {
-        if (i == Model.PageNumber)
+        <form class="filter-bar" method="get">
+            <input class="field" type="search" name="search" value="@Model.Search" placeholder="Tìm tên phim hoặc thể loại..." />
+            <select class="field" name="genre" onchange="this.form.submit()">
+                <option value="">Tất cả thể loại</option>
+                @foreach (var item in Model.Genres) { <option value="@item" @(Model.Genre == item ? "selected" : "")>@item</option> }
+            </select>
+            <button class="btn btn-primary" type="submit">Tìm phim</button>
+        </form>
+        @if (!string.IsNullOrWhiteSpace(Model.Genre))
         {
-            <a class="page-btn active"
-               href="@Url.Action("Index",
-               new { page = i, size = ViewBag.Size })">
-
-                @i
-
-            </a>
+            <div class="filter-result">Đang hiển thị thể loại <strong>@Model.Genre</strong> · @Model.Movies.TotalItemCount phim <a href="@Url.Action("Index")#movies">Xóa bộ lọc</a></div>
         }
-        else
+        <div class="movie-grid">
+            @foreach (var movie in Model.Movies)
+            {
+                <article class="movie-card">
+                    <a href="@Url.Action("Detail", new { id = movie.MovieID })"><div class="poster"><img src="@Url.Content("~/Content/images/" + movie.Poster)" alt="@movie.Title" loading="lazy" /><span class="poster-badge">@movie.Status</span></div></a>
+                    <div class="movie-info"><h3>@movie.Title</h3><p>@movie.Genre · @movie.Duration phút · @movie.AgeLimit</p><div class="movie-card-actions"><a class="btn btn-primary" href="@Url.Action("BuyTicket", new { id = movie.MovieID })">Đặt vé</a><a class="btn" href="@Url.Action("Detail", new { id = movie.MovieID })">Chi tiết</a></div></div>
+                </article>
+            }
+            @if (!Model.Movies.Any()) { <div class="empty-state"><h3>Không tìm thấy phim phù hợp</h3><a class="btn btn-primary" href="@Url.Action("Index")">Xem tất cả phim</a></div> }
+        </div>
+        @if (Model.Movies.PageCount > 1)
         {
-            <a class="page-btn"
-               href="@Url.Action("Index",
-               new { page = i, size = ViewBag.Size })">
-
-                @i
-
-            </a>
+            <nav class="pagination-wrap"><span class="page-summary">Trang @Model.Movies.PageNumber / @Model.Movies.PageCount · @Model.Movies.TotalItemCount phim</span>
+                @Html.PagedListPager(Model.Movies, page => Url.Action("Index", new { page, search = Model.Search, genre = Model.Genre }) + "#movies",
+                    new PagedListRenderOptions { DisplayLinkToFirstPage = PagedListDisplayMode.Always, DisplayLinkToLastPage = PagedListDisplayMode.Always, DisplayLinkToPreviousPage = PagedListDisplayMode.Always, DisplayLinkToNextPage = PagedListDisplayMode.Always, MaximumPageNumbersToDisplay = 5 })
+            </nav>
         }
-    }
+    </div>
+</section>
 
-</div>
+<section class="section content-showcase">
+    <div class="container">
+        <div class="section-head"><div><div class="eyebrow">Được yêu thích</div><h2>Phim hot</h2></div><p>Những tác phẩm có đánh giá cao và được đặt vé nhiều nhất.</p></div>
+        <div class="horizontal-movies">
+            @foreach (var movie in Model.HotMovies) { <a class="mini-movie" href="@Url.Action("Detail", new { id = movie.MovieID })"><img src="@Url.Content("~/Content/images/" + movie.Poster)" alt="@movie.Title" /><span><strong>@movie.Title</strong><small>@movie.Rating/10 · @movie.Genre</small></span></a> }
+        </div>
+    </div>
+</section>
+
+<section class="section section-cream">
+    <div class="container">
+        <div class="split-showcase">
+            <div><div class="section-head compact"><div><div class="eyebrow">Sắp ra mắt</div><h2>Phim sắp chiếu</h2></div></div>
+                <div class="stack-list">@foreach (var movie in Model.UpcomingMovies) { <a href="@Url.Action("Detail", new { id = movie.MovieID })"><img src="@Url.Content("~/Content/images/" + movie.Poster)" alt="" /><span><strong>@movie.Title</strong><small>@movie.ReleaseDate.ToString("dd/MM/yyyy") · @movie.Genre</small></span></a> }</div>
+            </div>
+            <div><div class="section-head compact"><div><div class="eyebrow">Premiere</div><h2>Suất chiếu sớm</h2></div></div>
+                <div class="stack-list">@foreach (var movie in Model.EarlyMovies) { <a href="@Url.Action("ShowTime", new { id = movie.MovieID })"><img src="@Url.Content("~/Content/images/" + movie.Poster)" alt="" /><span><strong>@movie.Title</strong><small>Đặt trước · @movie.Format</small></span></a> }</div>
+            </div>
+        </div>
+    </div>
+</section>
+
+<section class="section">
+    <div class="container">
+        <div class="section-head"><div><div class="eyebrow">Dành riêng cho thành viên</div><h2>Sự kiện & ưu đãi</h2></div><a class="btn btn-outline" href="@Url.Action("Event")">Xem tất cả</a></div>
+        <div class="event-strip">
+            @foreach (var item in Model.Events) { <a class="event-promo" href="@Url.Action("EventDetail", new { id = item.EventID })"><img src="@Url.Content("~/Content/images/" + item.Image)" alt="@item.Title" /><div><span>@item.Label</span><h3>@item.Title</h3><p>@item.Description</p><small>Đến @item.EndDate.ToString("dd/MM/yyyy")</small></div></a> }
+        </div>
+    </div>
+</section>
+
+@section scripts {
+<script>
+(function () {
+    var slider = document.getElementById('heroSlider'), slides = slider.querySelectorAll('.hero-slide'), dots = slider.querySelectorAll('.slider-dots button'), index = 0, timer;
+    var progress = slider.querySelector('.slider-progress span');
+    function animateProgress() { progress.classList.remove('running'); void progress.offsetWidth; progress.classList.add('running'); }
+    function show(next) { slides[index].classList.remove('active'); dots[index].classList.remove('active'); index = (next + slides.length) % slides.length; slides[index].classList.add('active'); dots[index].classList.add('active'); animateProgress(); }
+    function start() { clearInterval(timer); animateProgress(); timer = setInterval(function () { show(index + 1); }, 5500); }
+    slider.querySelector('.slider-next').onclick = function () { show(index + 1); start(); };
+    slider.querySelector('.slider-prev').onclick = function () { show(index - 1); start(); };
+    for (var i = 0; i < dots.length; i++) dots[i].onclick = function () { show(parseInt(this.getAttribute('data-slide'), 10)); start(); };
+    start();
+})();
+</script>
+}

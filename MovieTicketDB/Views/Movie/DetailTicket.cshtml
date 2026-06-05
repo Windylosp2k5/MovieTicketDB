@@ -1,84 +1,45 @@
-﻿@model MovieTicketDB.Models.Ticket
-
+﻿@model IEnumerable<MovieTicketDB.Models.TicketReceiptViewModel>
 @{
-    ViewBag.Title = "Chi tiết vé";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Vé của tôi";
 }
-
-<style>
-    .ticket-detail {
-        width: 800px;
-        margin: 30px auto;
-        background: white;
-        border: 2px dashed red;
-        padding: 25px;
-        border-radius: 12px;
-    }
-
-    .ticket-title {
-        text-align: center;
-        color: red;
-        font-size: 32px;
-        font-weight: bold;
-        margin-bottom: 25px;
-    }
-
-    .ticket-info {
-        font-size: 18px;
-        line-height: 32px;
-    }
-
-    .ticket-code {
-        text-align: center;
-        background: #f5f5f5;
-        padding: 15px;
-        margin-top: 25px;
-        font-size: 22px;
-        font-weight: bold;
-        color: red;
-    }
-</style>
-
-<div class="ticket-detail">
-
-    <div class="ticket-title">
-        PHP CINEMA TICKET
+<section class="page-shell">
+    <div class="container">
+        <div class="section-head">
+            <div><div class="eyebrow">PHP Cinema Wallet</div><h1 class="page-title">Vé của tôi</h1></div>
+            <a class="btn btn-primary" href="@Url.Action("Index")">Đặt vé mới</a>
+        </div>
+        @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+        <div class="ticket-list">
+            @foreach (var item in Model)
+            {
+                <article class="ticket">
+                    <div class="ticket-main">
+                        <div class="eyebrow">@item.Booking.Status</div>
+                        <h2>@item.ShowTime.Movy.Title</h2>
+                        <div class="facts">
+                            <div class="fact"><span>Rạp</span><strong>@item.ShowTime.Room.Cinema.CinemaName</strong></div>
+                            <div class="fact"><span>Phòng / Ghế</span><strong>@item.ShowTime.Room.RoomName · @string.Join(", ", item.Booking.SeatNames)</strong></div>
+                            <div class="fact"><span>Thời gian</span><strong>@item.ShowTime.StartTime.ToString(@"hh\:mm") · @item.ShowTime.ShowDate.ToString("dd/MM/yyyy")</strong></div>
+                            <div class="fact"><span>Thanh toán</span><strong>@item.Booking.PaymentMethod · @item.Booking.TotalMoney.ToString("N0")đ</strong></div>
+                        </div>
+                    </div>
+                    <div class="ticket-side">
+                        <div>
+                            <div class="ticket-code">@item.Booking.Code</div>
+                            <div class="barcode"></div>
+                            <small>Xuất trình mã này tại quầy soát vé</small>
+                        </div>
+                    </div>
+                </article>
+            }
+            @if (!Model.Any())
+            {
+                <div class="panel empty-state">
+                    <h2>Bạn chưa có vé nào</h2>
+                    <p>Chọn một bộ phim và bắt đầu trải nghiệm điện ảnh của bạn.</p>
+                    <a class="btn btn-primary" href="@Url.Action("Index")">Khám phá phim</a>
+                </div>
+            }
+        </div>
     </div>
-
-    <div class="ticket-info">
-        <p><b>Mã vé:</b> @Model.TicketID</p>
-
-        <p><b>Khách hàng:</b> @Model.User.FullName</p>
-
-        <p><b>Email:</b> @Model.User.Email</p>
-
-        <p><b>Phim:</b> @Model.ShowTime.Movy.Title</p>
-
-        <p><b>Rạp:</b> @Model.ShowTime.Room.Cinema.CinemaName</p>
-
-        <p><b>Phòng:</b> @Model.ShowTime.Room.RoomName</p>
-
-        <p><b>Ghế:</b> @Model.Seat.SeatName</p>
-
-        <p><b>Ngày chiếu:</b> @Model.ShowTime.ShowDate</p>
-
-        <p><b>Giờ chiếu:</b> @Model.ShowTime.StartTime</p>
-
-        <p><b>Giá vé:</b> @Model.ShowTime.Price VNĐ</p>
-
-        <p><b>Ngày đặt:</b> @Model.BookingDate</p>
-
-        <p><b>Trạng thái:</b> @Model.Status</p>
-    </div>
-
-    <div class="ticket-code">
-        TICKET-@Model.TicketID
-    </div>
-
-    <br />
-
-    <a href="/Movie/Index" class="btn btn-default">
-        Về danh sách phim
-    </a>
-
-</div>
+</section>

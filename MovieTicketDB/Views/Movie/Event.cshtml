@@ -1,39 +1,25 @@
 ﻿@model IEnumerable<MovieTicketDB.Models.Event>
-
 @{
-    ViewBag.Title = "Sự kiện";
-    Layout = "~/Views/Shared/_Layout.cshtml";
+    ViewBag.Title = "Ưu đãi";
 }
-
-<h2>Sự kiện khuyến mãi</h2>
-
-<div class="row">
-
-    @foreach (var item in Model)
-    {
-        <div class="col-md-3" style="margin-bottom:80px;">
-
-            <div class="thumbnail" style="padding:20px;">
-
-               <img src="@Url.Content("~/Content/Images/" + item.Image)"
-                    style="width:100%; height:360px; object-fit:cover;" />
-
-                <div class="caption">
-
-                    <h4>@item.Title</h4>
-
-                    <p>@item.Description</p>
-
-                    <a href="/Movie/EventDetail/@item.EventID"
-                       class="btn btn-danger">
-                        Xem chi tiết
-                    </a>
-
-                </div>
-
-            </div>
-
+<section class="page-shell">
+    <div class="container">
+        <div class="section-head">
+            <div><div class="eyebrow">Dành riêng cho bạn</div><h1 class="page-title">Ưu đãi PHP Cinema</h1></div>
+            <p>Thêm nhiều niềm vui cho mỗi lần đến rạp với những chương trình dành cho thành viên.</p>
         </div>
-    }
-
-</div>
+        <div class="event-grid">
+            @foreach (var item in Model)
+            {
+                <article class="event-card" style="@("--card-accent:" + item.Accent)">
+                    <span class="event-label">@item.Label</span>
+                    <div>
+                        <h3>@item.Title</h3>
+                        <p>@item.Description</p>
+                        <a class="btn btn-primary" href="@Url.Action("EventDetail", new { id = item.EventID })">Xem chi tiết</a>
+                    </div>
+                </article>
+            }
+        </div>
+    </div>
+</section>

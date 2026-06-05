@@ -1,0 +1,10 @@
+@model MovieTicketDB.Models.Event
+@{ ViewBag.Title = Model.EventID == 0 ? "Thêm sự kiện" : "Sửa sự kiện"; }
+<section class="page-shell"><div class="container admin-form-shell"><div class="section-head"><div><div class="eyebrow">Quản trị ưu đãi</div><h1 class="page-title">@ViewBag.Title</h1></div></div>
+<form class="panel admin-form" method="post">@Html.AntiForgeryToken()@Html.ValidationSummary()<input type="hidden" name="EventID" value="@Model.EventID" />
+<div class="form-row"><div class="form-group"><label>Tên sự kiện</label><input class="field" name="Title" value="@Model.Title" required /></div><div class="form-group"><label>Nhãn</label><input class="field" name="Label" value="@Model.Label" /></div></div>
+<div class="form-group"><label>Mô tả</label><textarea class="field textarea" name="Description">@Model.Description</textarea></div>
+<div class="form-row"><div class="form-group"><label>Ảnh</label><select class="field" name="Image">@for(var i=1;i<=4;i++){var p="event"+i+".jpg";<option value="@p" @(Model.Image==p?"selected":"")>@p</option>}</select></div><div class="form-group"><label>Màu chủ đạo</label><input class="field" name="Accent" value="@Model.Accent" /></div></div>
+<div class="form-group"><label>Ngày kết thúc</label><input class="field" type="date" name="EndDate" value="@Model.EndDate.ToString("yyyy-MM-dd")" /></div>
+<button class="btn btn-primary" type="submit">Lưu sự kiện</button> <a class="btn btn-outline" href="@Url.Action("Index")">Hủy</a>
+</form></div></section>
