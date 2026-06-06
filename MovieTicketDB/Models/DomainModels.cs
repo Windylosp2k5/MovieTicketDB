@@ -92,6 +92,28 @@ namespace MovieTicketDB.Models
         public DateTime EndDate { get; set; }
     }
 
+    public class ConcessionProduct
+    {
+        public int ProductID { get; set; }
+        public string Name { get; set; }
+        public string Category { get; set; }
+        public string Description { get; set; }
+        public decimal BasePrice { get; set; }
+        public string Accent { get; set; }
+        public string ShortCode { get; set; }
+        public string Image { get; set; }
+    }
+
+    public class ConcessionOrderItem
+    {
+        public int ProductID { get; set; }
+        public string ProductName { get; set; }
+        public string Size { get; set; }
+        public int Quantity { get; set; }
+        public decimal UnitPrice { get; set; }
+        public decimal TotalPrice { get { return UnitPrice * Quantity; } }
+    }
+
     public class Booking
     {
         public int BookingID { get; set; }
@@ -100,6 +122,21 @@ namespace MovieTicketDB.Models
         public List<string> SeatNames { get; set; }
         public decimal TotalMoney { get; set; }
         public DateTime BookingDate { get; set; }
+        public string PaymentMethod { get; set; }
+        public string Status { get; set; }
+        public string Code { get; set; }
+        public decimal TicketMoney { get; set; }
+        public decimal ConcessionMoney { get; set; }
+        public List<ConcessionOrderItem> Concessions { get; set; }
+    }
+
+    public class StoreOrder
+    {
+        public int OrderID { get; set; }
+        public int UserID { get; set; }
+        public List<ConcessionOrderItem> Items { get; set; }
+        public decimal TotalMoney { get; set; }
+        public DateTime OrderDate { get; set; }
         public string PaymentMethod { get; set; }
         public string Status { get; set; }
         public string Code { get; set; }

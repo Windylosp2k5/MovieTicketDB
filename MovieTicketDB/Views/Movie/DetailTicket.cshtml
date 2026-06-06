@@ -9,6 +9,10 @@
             <a class="btn btn-primary" href="@Url.Action("Index")">Đặt vé mới</a>
         </div>
         @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+        @if (TempData["EmailStatus"] != null)
+        {
+            <div class="alert @((TempData["EmailSent"] as bool?) == true ? "alert-success" : "alert-warning")">@TempData["EmailStatus"]</div>
+        }
         <div class="ticket-list">
             @foreach (var item in Model)
             {
@@ -21,6 +25,11 @@
                             <div class="fact"><span>Phòng / Ghế</span><strong>@item.ShowTime.Room.RoomName · @string.Join(", ", item.Booking.SeatNames)</strong></div>
                             <div class="fact"><span>Thời gian</span><strong>@item.ShowTime.StartTime.ToString(@"hh\:mm") · @item.ShowTime.ShowDate.ToString("dd/MM/yyyy")</strong></div>
                             <div class="fact"><span>Thanh toán</span><strong>@item.Booking.PaymentMethod · @item.Booking.TotalMoney.ToString("N0")đ</strong></div>
+                            @if (item.Booking.Concessions != null && item.Booking.Concessions.Any())
+                            {
+                                <div class="fact ticket-food"><span>Bắp &amp; nước</span><strong>@string.Join("; ", item.Booking.Concessions.Select(x => x.ProductName + " × " + x.Quantity))</strong></div>
+                                <div class="fact"><span>Tiền món</span><strong>@item.Booking.ConcessionMoney.ToString("N0")đ</strong></div>
+                            }
                         </div>
                     </div>
                     <div class="ticket-side">

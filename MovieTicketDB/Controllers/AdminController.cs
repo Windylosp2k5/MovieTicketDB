@@ -29,7 +29,7 @@ namespace MovieTicketDB.Controllers
             var model = id.HasValue ? CinemaStore.Movies.FirstOrDefault(x => x.MovieID == id.Value) : new Movy
             {
                 ReleaseDate = DateTime.Today, Rating = 8, Duration = 120, Status = "Đang chiếu", AgeLimit = "T13",
-                Language = "Tiếng Việt / Phụ đề", Country = "Mỹ", Format = "2D", Poster = "movie1.jpg"
+                Language = "Tiếng Việt / Phụ đề", Country = "Mỹ", Format = "2D", Poster = "film1.jpg"
             };
             return model == null ? (ActionResult)HttpNotFound() : View(model);
         }

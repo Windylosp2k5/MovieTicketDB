@@ -11,10 +11,4 @@
             <a class="btn btn-primary" href="@Url.Action("BuyTicket", new { id = Model.MovieID })">Chọn suất chiếu</a><a class="btn btn-outline" href="@Url.Action("Index")">Quay lại</a>
         </div>
     </div>
-    <div class="container cast-section">
-        <div class="section-head"><div><div class="eyebrow">Dàn diễn viên</div><h2>Diễn viên & vai diễn</h2></div><p>@Model.Actors</p></div>
-        <div class="cast-grid">
-            @foreach (var actor in Model.Cast) { <article class="cast-card"><img src="@Url.Content("~/Content/images/" + actor.Image)" alt="@actor.Name" /><div><h3>@actor.Name</h3><p>@actor.Character</p></div></article> }
-        </div>
-    </div>
 </section>

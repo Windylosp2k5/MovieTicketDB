@@ -1,0 +1,71 @@
+@model MovieTicketDB.Models.StorePaymentViewModel
+@{
+    ViewBag.Title = "Thanh toán đơn Store";
+    var qrOptions = Model.QrOptions.ToList();
+    var firstQr = qrOptions.First();
+}
+<section class="page-shell">
+    <div class="container payment-page">
+        <div class="section-head">
+            <div><div class="eyebrow">PHP Cinema Store</div><h1 class="page-title">Thanh toán bắp &amp; nước</h1></div>
+            <p>Đơn <strong>@Model.PaymentCode</strong> hết hạn lúc <strong>@Model.ExpiresAt.ToString("HH:mm")</strong>.</p>
+        </div>
+        @if (!ViewData.ModelState.IsValid) { <div class="alert alert-error">@Html.ValidationSummary()</div> }
+        <form method="post" action="@Url.Action("ConfirmStorePayment")">
+            @Html.AntiForgeryToken()
+            <div class="payment-layout">
+                <div class="panel">
+                    <div class="payment-food">
+                        <span>Sản phẩm</span>
+                        @foreach (var item in Model.Items)
+                        {
+                            <div><span>@item.ProductName × @item.Quantity</span><strong>@item.TotalPrice.ToString("N0")đ</strong></div>
+                        }
+                    </div>
+                    <div class="summary-row"><span>Tổng thanh toán</span><strong class="total">@Model.TotalMoney.ToString("N0")đ</strong></div>
+                    <h3>Phương thức thanh toán</h3>
+                    <div class="payment-methods">
+                        @foreach (var option in qrOptions)
+                        {
+                            <label class="payment-option payment-option-@option.Code.ToLower()">
+                                <input type="radio" name="paymentMethod" value="@option.Code" @(option.Code == firstQr.Code ? "checked" : "") />
+                                <span><b>@option.Name</b><small>Quét mã QR</small></span>
+                            </label>
+                        }
+                    </div>
+                    <label class="payment-confirm"><input type="checkbox" name="paymentConfirmed" value="true" /><span>Tôi đã thanh toán đúng số tiền và nội dung đơn hàng.</span></label>
+                    <button class="btn btn-primary payment-submit" type="submit">Xác nhận thanh toán @Model.TotalMoney.ToString("N0")đ</button>
+                </div>
+                <aside class="panel qr-panel" id="qrPanel" style="--qr-accent:@firstQr.Accent">
+                    <div class="eyebrow">Quét để thanh toán</div>
+                    <div class="qr-provider" id="qrProvider">@firstQr.Name</div>
+                    <div class="qr-frame"><img id="qrImage" src="data:image/png;base64,@firstQr.QrCodeBase64" alt="Mã QR thanh toán Store" /></div>
+                    <div class="qr-bank" id="qrReceiver">@firstQr.Receiver</div>
+                    <div class="qr-account">Tài khoản: <strong id="qrAccount">@firstQr.Account</strong></div>
+                    <div class="qr-amount">@Model.TotalMoney.ToString("N0")đ</div>
+                    <div class="qr-content">Nội dung: <strong>@Model.PaymentCode</strong></div>
+                </aside>
+            </div>
+            <div id="qrData" hidden>
+                @foreach (var option in qrOptions) { <i data-code="@option.Code" data-name="@option.Name" data-receiver="@option.Receiver" data-account="@option.Account" data-accent="@option.Accent" data-image="@option.QrCodeBase64"></i> }
+            </div>
+        </form>
+    </div>
+</section>
+@section scripts {
+<script>
+(function () {
+    var methods = document.querySelectorAll('input[name="paymentMethod"]'), panel = document.getElementById('qrPanel');
+    function update() {
+        var selected = document.querySelector('input[name="paymentMethod"]:checked');
+        var data = document.querySelector('#qrData [data-code="' + selected.value + '"]');
+        document.getElementById('qrImage').src = 'data:image/png;base64,' + data.getAttribute('data-image');
+        document.getElementById('qrProvider').textContent = data.getAttribute('data-name');
+        document.getElementById('qrReceiver').textContent = data.getAttribute('data-receiver');
+        document.getElementById('qrAccount').textContent = data.getAttribute('data-account');
+        panel.style.setProperty('--qr-accent', data.getAttribute('data-accent'));
+    }
+    for (var i = 0; i < methods.length; i++) methods[i].addEventListener('change', update);
+})();
+</script>
+}

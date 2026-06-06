@@ -17,6 +17,7 @@
             <nav class="nav-links" aria-label="Điều hướng chính">
                 <a href="@Url.Action("Index", "Movie")">Phim</a>
                 <a href="@Url.Action("Theaters", "Movie")">Rạp chiếu</a>
+                <a href="@Url.Action("StoreMenu", "Movie")">Cửa hàng</a>
                 <a href="@Url.Action("Event", "Movie")">Ưu đãi</a>
                 <a href="@Url.Action("DetailTicket", "Movie")">Vé của tôi</a>
             </nav>
@@ -34,6 +35,7 @@
                         <a class="btn btn-primary" href="@Url.Action("Index", "Admin")">Quản trị</a>
                     }
                     <a class="btn btn-outline" href="@Url.Action("DetailTicket", "Movie")">Vé của tôi</a>
+                    <a class="btn btn-ghost" href="@Url.Action("StoreOrders", "Movie")">Đơn Store</a>
                     <a class="btn btn-ghost" href="@Url.Action("Logout", "Movie")">Thoát</a>
                 }
             </div>
@@ -58,6 +60,7 @@
                     <h4>Khám phá</h4>
                     <a href="@Url.Action("Index", "Movie")">Phim đang chiếu</a>
                     <a href="@Url.Action("Theaters", "Movie")">Hệ thống rạp</a>
+                    <a href="@Url.Action("StoreMenu", "Movie")">Bắp &amp; nước</a>
                     <a href="@Url.Action("Event", "Movie")">Khuyến mãi</a>
                 </div>
                 <div>

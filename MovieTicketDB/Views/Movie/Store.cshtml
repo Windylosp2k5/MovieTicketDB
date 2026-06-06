@@ -1,0 +1,111 @@
+@model MovieTicketDB.Models.StoreViewModel
+@{
+    ViewBag.Title = "Chọn bắp và nước";
+}
+<section class="page-shell store-page">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <div class="eyebrow">Bước 3 / 4</div>
+                <h1 class="page-title">Thêm vị ngon cho suất chiếu</h1>
+            </div>
+            <p>Chọn món theo giá niêm yết. Bạn có thể bỏ qua và chỉ thanh toán tiền vé.</p>
+        </div>
+
+        <form method="post" action="@Url.Action("Payment")" id="storeForm">
+            @Html.AntiForgeryToken()
+            <input type="hidden" name="showTimeId" value="@Model.ShowTime.ShowTimeID" />
+            @foreach (var seat in Model.SeatNames)
+            {
+                <input type="hidden" name="seatNames" value="@seat" />
+            }
+            <div class="store-layout">
+                <div class="store-products">
+                    @foreach (var group in Model.Products.GroupBy(x => x.Category))
+                    {
+                        <div class="store-group">
+                            <div class="store-group-title">
+                                <div>
+                                    <div class="eyebrow">@group.Key</div>
+                                    <h2>@(group.Key == "Nước ngọt" ? "Nước mát lạnh" : "Bắp rang thơm giòn")</h2>
+                                </div>
+                                <span>@group.Count() lựa chọn</span>
+                            </div>
+                            <div class="store-grid">
+                                @foreach (var product in group)
+                                {
+                                    <article class="store-card" style="--product-accent:@product.Accent">
+                                        <input type="hidden" name="productIds" value="@product.ProductID" />
+                                        <input type="hidden" name="sizes" value="" />
+                                        <div class="product-art"><img src="@Url.Content("~/Content/images/" + product.Image)" alt="@product.Name" /></div>
+                                        <div class="product-info">
+                                            <small>@product.Category</small>
+                                            <h3>@product.Name</h3>
+                                            <p>@product.Description</p>
+                                            <strong class="product-price" data-base="@product.BasePrice">@product.BasePrice.ToString("N0")đ</strong>
+                                        </div>
+                                        <div class="product-controls product-controls-single">
+                                            <label>Số lượng
+                                                <input class="field product-quantity" type="number" name="quantities" min="0" max="10" value="0" />
+                                            </label>
+                                        </div>
+                                    </article>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+
+                <aside class="panel booking-summary store-summary">
+                    <div class="eyebrow">Đơn hàng của bạn</div>
+                    <h2>@Model.ShowTime.Movy.Title</h2>
+                    <div class="summary-row"><span>Ghế</span><strong>@string.Join(", ", Model.SeatNames)</strong></div>
+                    <div class="summary-row"><span>Tiền vé</span><strong>@Model.TicketMoney.ToString("N0")đ</strong></div>
+                    <div class="store-cart" id="storeCart"><p>Chưa chọn bắp hoặc nước.</p></div>
+                    <div class="summary-row"><span>Bắp &amp; nước</span><strong id="foodTotal">0đ</strong></div>
+                    <div class="summary-row"><span>Tổng thanh toán</span><strong class="total" id="grandTotal">@Model.TicketMoney.ToString("N0")đ</strong></div>
+                    <button class="btn btn-primary store-checkout" type="submit">Thanh toán vé và món đã chọn</button>
+                    <button class="btn btn-outline store-skip" type="submit" id="skipStore">Bỏ qua, chỉ thanh toán vé</button>
+                    <a class="store-back" href="@Url.Action("SelectSeat", new { showTimeId = Model.ShowTime.ShowTimeID })">Quay lại chọn ghế</a>
+                </aside>
+            </div>
+        </form>
+    </div>
+</section>
+@section scripts {
+<script>
+(function () {
+    var cards = document.querySelectorAll('.store-card');
+    var ticketMoney = @Model.TicketMoney.ToString("0");
+    var cart = document.getElementById('storeCart');
+    var foodTotal = document.getElementById('foodTotal');
+    var grandTotal = document.getElementById('grandTotal');
+    function money(value) { return value.toLocaleString('vi-VN') + 'đ'; }
+    function update() {
+        var total = 0, lines = [];
+        for (var i = 0; i < cards.length; i++) {
+            var quantity = parseInt(cards[i].querySelector('.product-quantity').value, 10) || 0;
+            var base = parseInt(cards[i].querySelector('.product-price').getAttribute('data-base'), 10);
+            var unitPrice = base;
+            var name = cards[i].querySelector('h3').textContent;
+            cards[i].classList.toggle('selected', quantity > 0);
+            cards[i].querySelector('.product-price').textContent = money(unitPrice);
+            if (quantity > 0) {
+                total += unitPrice * quantity;
+                lines.push('<div><span>' + name + ' × ' + quantity + '</span><strong>' + money(unitPrice * quantity) + '</strong></div>');
+            }
+        }
+        cart.innerHTML = lines.length ? lines.join('') : '<p>Chưa chọn bắp hoặc nước.</p>';
+        foodTotal.textContent = money(total);
+        grandTotal.textContent = money(ticketMoney + total);
+    }
+    for (var i = 0; i < cards.length; i++) {
+        cards[i].querySelector('.product-quantity').addEventListener('input', update);
+    }
+    document.getElementById('skipStore').addEventListener('click', function () {
+        for (var i = 0; i < cards.length; i++) cards[i].querySelector('.product-quantity').value = 0;
+    });
+    update();
+})();
+</script>
+}

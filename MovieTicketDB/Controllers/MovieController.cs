@@ -1,4 +1,5 @@
 ﻿using MovieTicketDB.Models;
+using MovieTicketDB.Services;
 using System;
 using System.Collections.Generic;
 using System.Drawing.Imaging;
@@ -72,7 +73,7 @@ namespace MovieTicketDB.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult Payment(int showTimeId, string[] seatNames)
+        public ActionResult Store(int showTimeId, string[] seatNames)
         {
             if (Session["UserID"] == null) return RedirectToAction("Login");
             var showTime = CinemaStore.ShowTimes.FirstOrDefault(x => x.ShowTimeID == showTimeId);
@@ -87,23 +88,139 @@ namespace MovieTicketDB.Controllers
                 return RedirectToAction("SelectSeat", new { showTimeId });
             }
 
-            var total = selected.Sum(x => x.StartsWith("E") ? 120000m : showTime.Price);
-            var paymentCode = "PHPPAY" + DateTime.Now.ToString("yyMMddHHmmss") + showTimeId;
-            var qrPayload = string.Join("|", new[]
+            var ticketMoney = selected.Sum(x => x.StartsWith("E") ? 120000m : showTime.Price);
+            return View(new StoreViewModel
             {
-                "PHP CINEMA PAYMENT",
-                "ORDER=" + paymentCode,
-                "AMOUNT=" + total.ToString("0"),
-                "MOVIE=" + showTime.Movy.Title,
-                "SEATS=" + string.Join(",", selected)
+                ShowTime = showTime,
+                SeatNames = selected,
+                TicketMoney = ticketMoney,
+                Products = CinemaStore.Concessions
             });
+        }
+
+        public ActionResult StoreMenu()
+        {
+            return View(CinemaStore.Concessions);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult StoreCheckout(int[] productIds, string[] sizes, int[] quantities)
+        {
+            var items = BuildConcessionOrder(productIds, sizes, quantities);
+            if (!items.Any())
+            {
+                TempData["StoreError"] = "Vui lòng chọn ít nhất một sản phẩm.";
+                return RedirectToAction("StoreMenu");
+            }
+            if (Session["UserID"] == null)
+            {
+                Session["PendingStoreCart"] = items;
+                return RedirectToAction("Login", new { returnUrl = Url.Action("ResumeStoreCheckout") });
+            }
+
+            return CreateStorePayment(items);
+        }
+
+        public ActionResult ResumeStoreCheckout()
+        {
+            if (Session["UserID"] == null)
+                return RedirectToAction("Login", new { returnUrl = Url.Action("ResumeStoreCheckout") });
+            var items = Session["PendingStoreCart"] as List<ConcessionOrderItem>;
+            Session.Remove("PendingStoreCart");
+            if (items == null || !items.Any()) return RedirectToAction("StoreMenu");
+            return CreateStorePayment(items);
+        }
+
+        private ActionResult CreateStorePayment(List<ConcessionOrderItem> items)
+        {
+            var total = items.Sum(x => x.TotalPrice);
+            var paymentCode = "PHPSHOP" + DateTime.Now.ToString("yyMMddHHmmss");
+            var qrOptions = CreateStorePaymentQrOptions(paymentCode, total, items);
+            var model = new StorePaymentViewModel
+            {
+                Items = items,
+                TotalMoney = total,
+                PaymentCode = paymentCode,
+                QrOptions = qrOptions,
+                ExpiresAt = DateTime.Now.AddMinutes(10)
+            };
+            Session["PendingStorePayment"] = model;
+            return View("StorePayment", model);
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult ConfirmStorePayment(string paymentMethod, bool paymentConfirmed = false)
+        {
+            if (Session["UserID"] == null) return RedirectToAction("Login");
+            var payment = Session["PendingStorePayment"] as StorePaymentViewModel;
+            if (payment == null) return RedirectToAction("StoreMenu");
+            if (string.IsNullOrWhiteSpace(paymentMethod))
+            {
+                ModelState.AddModelError("", "Vui lòng chọn phương thức thanh toán.");
+                return View("StorePayment", payment);
+            }
+            if (payment.ExpiresAt < DateTime.Now)
+            {
+                ModelState.AddModelError("", "Mã thanh toán đã hết hạn. Vui lòng tạo lại đơn hàng.");
+                return View("StorePayment", payment);
+            }
+            if (IsQrMethod(paymentMethod) && !paymentConfirmed)
+            {
+                ModelState.AddModelError("", "Vui lòng xác nhận bạn đã hoàn tất thanh toán bằng mã QR.");
+                return View("StorePayment", payment);
+            }
+
+            var paymentName = GetPaymentName(paymentMethod);
+            var order = CinemaStore.AddStoreOrder((int)Session["UserID"], payment.Items, paymentName + " - " + payment.PaymentCode);
+            var user = CinemaStore.FindUser((int)Session["UserID"]);
+            var emailResult = TicketEmailService.SendStoreOrder(user, order);
+            Session.Remove("PendingStorePayment");
+            TempData["Success"] = "Đặt món thành công. Mã nhận món của bạn là " + order.Code + ".";
+            TempData["EmailStatus"] = emailResult.Message;
+            TempData["EmailSent"] = emailResult.Sent;
+            return RedirectToAction("StoreOrders");
+        }
+
+        public ActionResult StoreOrders()
+        {
+            if (Session["UserID"] == null) return RedirectToAction("Login", new { returnUrl = Url.Action("StoreOrders") });
+            var user = CinemaStore.FindUser((int)Session["UserID"]);
+            return View(CinemaStore.GetStoreOrders(user.UserID).Select(x => new StoreOrderReceiptViewModel { Order = x, User = user }).ToList());
+        }
+
+        [HttpPost, ValidateAntiForgeryToken]
+        public ActionResult Payment(int showTimeId, string[] seatNames, int[] productIds, string[] sizes, int[] quantities)
+        {
+            if (Session["UserID"] == null) return RedirectToAction("Login");
+            var showTime = CinemaStore.ShowTimes.FirstOrDefault(x => x.ShowTimeID == showTimeId);
+            if (showTime == null) return HttpNotFound();
+
+            var validSeats = CinemaStore.Seats.Where(x => x.RoomID == showTime.RoomID).Select(x => x.SeatName).ToList();
+            var booked = new HashSet<string>(CinemaStore.GetBookedSeats(showTimeId));
+            var selected = (seatNames ?? new string[0]).Distinct().Where(x => validSeats.Contains(x) && !booked.Contains(x)).ToList();
+            if (!selected.Any())
+            {
+                TempData["Error"] = "Ghế đã chọn không còn khả dụng. Vui lòng chọn lại.";
+                return RedirectToAction("SelectSeat", new { showTimeId });
+            }
+
+            var concessions = BuildConcessionOrder(productIds, sizes, quantities);
+            var ticketMoney = selected.Sum(x => x.StartsWith("E") ? 120000m : showTime.Price);
+            var concessionMoney = concessions.Sum(x => x.TotalPrice);
+            var total = ticketMoney + concessionMoney;
+            var paymentCode = "PHPPAY" + DateTime.Now.ToString("yyMMddHHmmss") + showTimeId;
+            var qrOptions = CreatePaymentQrOptions(paymentCode, total, showTime, selected);
             var model = new PaymentViewModel
             {
                 ShowTime = showTime,
                 SeatNames = selected,
+                TicketMoney = ticketMoney,
+                ConcessionMoney = concessionMoney,
+                Concessions = concessions,
                 TotalMoney = total,
                 PaymentCode = paymentCode,
-                QrCodeBase64 = CreateQrCode(qrPayload),
+                QrCodeBase64 = qrOptions.First().QrCodeBase64,
+                QrOptions = qrOptions,
                 ExpiresAt = DateTime.Now.AddMinutes(10)
             };
             Session["PendingPayment"] = model;
@@ -126,16 +243,20 @@ namespace MovieTicketDB.Controllers
                 ModelState.AddModelError("", "Mã thanh toán đã hết hạn. Vui lòng chọn lại ghế để tạo giao dịch mới.");
                 return View("Payment", payment);
             }
-            if (paymentMethod == "QR" && !paymentConfirmed)
+            if (IsQrMethod(paymentMethod) && !paymentConfirmed)
             {
-                ModelState.AddModelError("", "Vui lòng xác nhận bạn đã hoàn tất chuyển khoản QR.");
+                ModelState.AddModelError("", "Vui lòng xác nhận bạn đã hoàn tất thanh toán bằng mã QR.");
                 return View("Payment", payment);
             }
 
             var paymentName = GetPaymentName(paymentMethod);
-            var booking = CinemaStore.AddBooking((int)Session["UserID"], payment.ShowTime.ShowTimeID, payment.SeatNames, payment.TotalMoney, paymentName + " - " + payment.PaymentCode);
+            var booking = CinemaStore.AddBooking((int)Session["UserID"], payment.ShowTime.ShowTimeID, payment.SeatNames, payment.TicketMoney, payment.Concessions, paymentName + " - " + payment.PaymentCode);
+            var user = CinemaStore.FindUser((int)Session["UserID"]);
+            var emailResult = TicketEmailService.Send(user, booking, payment.ShowTime);
             Session.Remove("PendingPayment");
             TempData["Success"] = "Thanh toán thành công. Mã vé của bạn là " + booking.Code + ".";
+            TempData["EmailStatus"] = emailResult.Message;
+            TempData["EmailSent"] = emailResult.Sent;
             return RedirectToAction("DetailTicket");
         }
 
@@ -254,10 +375,79 @@ namespace MovieTicketDB.Controllers
                 case "QR": return "QR ngân hàng";
                 case "MOMO": return "MoMo";
                 case "ZALOPAY": return "ZaloPay";
-                case "CARD": return "Thẻ ngân hàng";
-                case "COUNTER": return "Thanh toán tại quầy";
+                case "VNPAY": return "VNPay QR";
                 default: return "Thanh toán điện tử";
             }
+        }
+
+        private static List<PaymentQrOption> CreatePaymentQrOptions(string paymentCode, decimal total, ShowTime showTime, IEnumerable<string> seats)
+        {
+            var seatText = string.Join(",", seats);
+            return new List<PaymentQrOption>
+            {
+                QrOption("QR", "QR ngân hàng", "PHP Cinema - Vietcombank", "1900 1234 5678", "#247c56", paymentCode, total, showTime, seatText),
+                QrOption("MOMO", "Ví MoMo", "PHP Cinema", "0909 888 999", "#a50064", paymentCode, total, showTime, seatText),
+                QrOption("ZALOPAY", "Ví ZaloPay", "PHP Cinema", "0909 888 999", "#1677ff", paymentCode, total, showTime, seatText),
+                QrOption("VNPAY", "VNPay QR", "PHP Cinema Merchant", "PHP-CINEMA-001", "#e52335", paymentCode, total, showTime, seatText)
+            };
+        }
+
+        private static List<PaymentQrOption> CreateStorePaymentQrOptions(string paymentCode, decimal total, IEnumerable<ConcessionOrderItem> items)
+        {
+            var itemText = string.Join(",", items.Select(x => x.ProductName + "x" + x.Quantity));
+            return new List<PaymentQrOption>
+            {
+                StoreQrOption("QR", "QR ngân hàng", "PHP Cinema - Vietcombank", "1900 1234 5678", "#247c56", paymentCode, total, itemText),
+                StoreQrOption("MOMO", "Ví MoMo", "PHP Cinema", "0909 888 999", "#a50064", paymentCode, total, itemText),
+                StoreQrOption("ZALOPAY", "Ví ZaloPay", "PHP Cinema", "0909 888 999", "#1677ff", paymentCode, total, itemText),
+                StoreQrOption("VNPAY", "VNPay QR", "PHP Cinema Merchant", "PHP-CINEMA-001", "#e52335", paymentCode, total, itemText)
+            };
+        }
+
+        private static PaymentQrOption QrOption(string code, string name, string receiver, string account, string accent, string paymentCode, decimal total, ShowTime showTime, string seats)
+        {
+            var payload = string.Join("|", new[]
+            {
+                "PHP CINEMA " + code, "RECEIVER=" + receiver, "ACCOUNT=" + account, "ORDER=" + paymentCode,
+                "AMOUNT=" + total.ToString("0"), "MOVIE=" + showTime.Movy.Title, "SEATS=" + seats
+            });
+            return new PaymentQrOption { Code = code, Name = name, Receiver = receiver, Account = account, Accent = accent, QrCodeBase64 = CreateQrCode(payload) };
+        }
+
+        private static PaymentQrOption StoreQrOption(string code, string name, string receiver, string account, string accent, string paymentCode, decimal total, string items)
+        {
+            var payload = string.Join("|", new[]
+            {
+                "PHP CINEMA STORE " + code, "RECEIVER=" + receiver, "ACCOUNT=" + account,
+                "ORDER=" + paymentCode, "AMOUNT=" + total.ToString("0"), "ITEMS=" + items
+            });
+            return new PaymentQrOption { Code = code, Name = name, Receiver = receiver, Account = account, Accent = accent, QrCodeBase64 = CreateQrCode(payload) };
+        }
+
+        private static bool IsQrMethod(string paymentMethod)
+        {
+            return new[] { "QR", "MOMO", "ZALOPAY", "VNPAY" }.Contains(paymentMethod);
+        }
+
+        private static List<ConcessionOrderItem> BuildConcessionOrder(int[] productIds, string[] sizes, int[] quantities)
+        {
+            var result = new List<ConcessionOrderItem>();
+            var count = new[] { productIds == null ? 0 : productIds.Length, sizes == null ? 0 : sizes.Length, quantities == null ? 0 : quantities.Length }.Min();
+            for (var i = 0; i < count; i++)
+            {
+                var product = CinemaStore.Concessions.FirstOrDefault(x => x.ProductID == productIds[i]);
+                var quantity = Math.Max(0, Math.Min(10, quantities[i]));
+                if (product == null || quantity == 0) continue;
+                result.Add(new ConcessionOrderItem
+                {
+                    ProductID = product.ProductID,
+                    ProductName = product.Name,
+                    Size = "",
+                    Quantity = quantity,
+                    UnitPrice = product.BasePrice
+                });
+            }
+            return result;
         }
     }
 }

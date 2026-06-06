@@ -1,0 +1,35 @@
+@model IEnumerable<MovieTicketDB.Models.StoreOrderReceiptViewModel>
+@{
+    ViewBag.Title = "Đơn Store của tôi";
+}
+<section class="page-shell">
+    <div class="container">
+        <div class="section-head">
+            <div><div class="eyebrow">PHP Cinema Store</div><h1 class="page-title">Đơn bắp &amp; nước của tôi</h1></div>
+            <a class="btn btn-primary" href="@Url.Action("StoreMenu")">Mua thêm</a>
+        </div>
+        @if (TempData["Success"] != null) { <div class="alert alert-success">@TempData["Success"]</div> }
+        @if (TempData["EmailStatus"] != null) { <div class="alert @((TempData["EmailSent"] as bool?) == true ? "alert-success" : "alert-warning")">@TempData["EmailStatus"]</div> }
+        <div class="ticket-list">
+            @foreach (var item in Model)
+            {
+                <article class="ticket store-order-ticket">
+                    <div class="ticket-main">
+                        <div class="eyebrow">@item.Order.Status</div>
+                        <h2>Đơn bắp &amp; nước</h2>
+                        <div class="facts">
+                            <div class="fact ticket-food"><span>Sản phẩm</span><strong>@string.Join("; ", item.Order.Items.Select(x => x.ProductName + " × " + x.Quantity))</strong></div>
+                            <div class="fact"><span>Thời gian đặt</span><strong>@item.Order.OrderDate.ToString("HH:mm · dd/MM/yyyy")</strong></div>
+                            <div class="fact"><span>Thanh toán</span><strong>@item.Order.TotalMoney.ToString("N0")đ</strong></div>
+                        </div>
+                    </div>
+                    <div class="ticket-side"><div><div class="ticket-code">@item.Order.Code</div><div class="barcode"></div><small>Đưa mã này tại quầy để nhận món</small></div></div>
+                </article>
+            }
+            @if (!Model.Any())
+            {
+                <div class="panel empty-state"><h2>Bạn chưa có đơn Store</h2><p>Mua bắp hoặc nước mà không cần đặt vé xem phim.</p><a class="btn btn-primary" href="@Url.Action("StoreMenu")">Đến cửa hàng</a></div>
+            }
+        </div>
+    </div>
+</section>

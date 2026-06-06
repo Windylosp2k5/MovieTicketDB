@@ -6,12 +6,12 @@
 <section class="page-shell">
     <div class="container">
         <div class="section-head">
-            <div><div class="eyebrow">Bước 2 / 3</div><h1 class="page-title">Chọn ghế ngồi</h1></div>
+            <div><div class="eyebrow">Bước 2 / 4</div><h1 class="page-title">Chọn ghế ngồi</h1></div>
             <p>@Model.ShowTime.Movy.Title · @Model.ShowTime.ShowDate.ToString("dd/MM/yyyy") · @Model.ShowTime.StartTime.ToString(@"hh\:mm")</p>
         </div>
         @if (TempData["Error"] != null) { <div class="alert alert-error">@TempData["Error"]</div> }
 
-        <form method="post" action="@Url.Action("Payment")" id="seatForm">
+        <form method="post" action="@Url.Action("Store")" id="seatForm">
             @Html.AntiForgeryToken()
             <input type="hidden" name="showTimeId" value="@Model.ShowTime.ShowTimeID" />
             <div class="seat-layout">
@@ -44,7 +44,7 @@
                     <div class="summary-row"><span>Suất chiếu</span><strong>@Model.ShowTime.StartTime.ToString(@"hh\:mm"), @Model.ShowTime.ShowDate.ToString("dd/MM")</strong></div>
                     <div class="summary-row"><span>Ghế</span><strong id="selectedSeats">Chưa chọn</strong></div>
                     <div class="summary-row"><span>Tổng tiền</span><strong class="total" id="totalMoney">0đ</strong></div>
-                    <button class="btn btn-primary" style="width:100%;margin-top:22px" type="submit">Tiếp tục thanh toán</button>
+                    <button class="btn btn-primary" style="width:100%;margin-top:22px" type="submit">Chọn bắp &amp; nước</button>
                 </aside>
             </div>
         </form>

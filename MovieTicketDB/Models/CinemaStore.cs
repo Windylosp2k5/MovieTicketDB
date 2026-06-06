@@ -44,6 +44,28 @@ namespace MovieTicketDB.Models
         public static readonly List<Room> Rooms = new List<Room>();
         public static readonly List<ShowTime> ShowTimes = new List<ShowTime>();
         public static readonly List<Seat> Seats = new List<Seat>();
+        public static readonly List<ConcessionProduct> Concessions = new List<ConcessionProduct>
+        {
+            Product(1, "Bắp rang bơ nhỏ", "Popcorn", "Phần bắp bơ nhỏ, giòn thơm.", 35000, "#f5bd3c", "popcorn_butter_s.jpg"),
+            Product(2, "Bắp rang bơ vừa", "Popcorn", "Phần bắp bơ vừa cho một người.", 45000, "#efad2f", "popcorn_butter_s.jpg"),
+            Product(3, "Bắp rang bơ lớn", "Popcorn", "Phần bắp bơ lớn để chia sẻ.", 55000, "#e69a24", "popcorn_butter_s.jpg"),
+            Product(4, "Bắp rang phô mai", "Popcorn", "Bắp rang phủ phô mai đậm vị.", 60000, "#f08b32", "popcorn_cheese.jpg"),
+            Product(5, "Bắp caramel", "Popcorn", "Caramel ngọt dịu phủ đều từng hạt.", 65000, "#b8793f", "popcorn_caramel.jpg"),
+
+            Product(6, "Coca Cola nhỏ", "Drink", "Ly Coca Cola nhỏ dùng lạnh.", 25000, "#e32636", "coca_s.jpg"),
+            Product(7, "Coca Cola lớn", "Drink", "Ly Coca Cola lớn dùng lạnh.", 35000, "#c7192a", "coca_l.jpg"),
+            Product(8, "Pepsi", "Drink", "Pepsi mát lạnh cho suất chiếu.", 30000, "#1769d2", "pepsi.jpg"),
+            Product(9, "7 Up", "Drink", "Nước ngọt vị chanh thanh mát.", 30000, "#34a853", "7up.jpg"),
+            Product(10, "Trà đào", "Drink", "Trà đào thơm dịu, dùng lạnh.", 35000, "#e78945", "peach_tea.jpg"),
+            Product(11, "Nước suối", "Drink", "Nước suối tinh khiết.", 20000, "#4e9ccb", "water.jpg"),
+
+            Product(12, "Combo Solo", "Combo", "Combo gọn nhẹ dành cho một người.", 70000, "#e85d3f", "combo_solo.jpg"),
+            Product(13, "Combo Couple", "Combo", "Combo bắp nước dành cho hai người.", 110000, "#d14f77", "combo_couple.jpg"),
+            Product(14, "Combo Family", "Combo", "Combo tiết kiệm dành cho gia đình.", 220000, "#7658d8", "combo_family.jpg"),
+            Product(15, "Combo VIP", "Combo", "Combo cao cấp cho trải nghiệm trọn vẹn.", 140000, "#b78b39", "combo_solo.jpg"),
+            Product(16, "Combo Kids", "Combo", "Combo nhỏ xinh dành cho trẻ em.", 55000, "#35a8a0", "combo_kids.jpg"),
+            Product(17, "Combo Sweet", "Combo", "Combo ngọt ngào dành cho buổi hẹn.", 95000, "#dc6788", "combo_sweet.jpg")
+        };
         public static readonly List<Event> Events = new List<Event>
         {
             Event(1, "Thứ Hai Đồng Giá 69K", "MỖI THỨ HAI", "Tận hưởng mọi bộ phim 2D với mức giá ưu đãi 69.000đ dành cho thành viên.", "event1.jpg", "#e85d3f", 60),
@@ -59,6 +81,7 @@ namespace MovieTicketDB.Models
         };
 
         private static readonly List<Booking> Bookings = new List<Booking>();
+        private static readonly List<StoreOrder> StoreOrders = new List<StoreOrder>();
 
         static CinemaStore()
         {
@@ -135,7 +158,7 @@ namespace MovieTicketDB.Models
                 if (movie == null)
                 {
                     input.MovieID = Movies.Any() ? Movies.Max(x => x.MovieID) + 1 : 1;
-                    input.Poster = string.IsNullOrWhiteSpace(input.Poster) ? "movie1.jpg" : input.Poster;
+                    input.Poster = string.IsNullOrWhiteSpace(input.Poster) ? "film1.jpg" : input.Poster;
                     input.Cast = BuildCast(input.MovieID, input.Actors);
                     Movies.Add(input);
                     RebuildShowTimes();
@@ -236,16 +259,44 @@ namespace MovieTicketDB.Models
         }
         public static IEnumerable<string> GetBookedSeats(int showTimeId) { lock (SyncRoot) return Bookings.Where(x => x.ShowTimeID == showTimeId).SelectMany(x => x.SeatNames).ToList(); }
 
-        public static Booking AddBooking(int userId, int showTimeId, IEnumerable<string> seats, decimal total, string method)
+        public static Booking AddBooking(int userId, int showTimeId, IEnumerable<string> seats, decimal ticketMoney, IEnumerable<ConcessionOrderItem> concessions, string method)
         {
             lock (SyncRoot)
             {
-                var booking = new Booking { BookingID = Bookings.Count + 1001, UserID = userId, ShowTimeID = showTimeId, SeatNames = seats.ToList(), TotalMoney = total, BookingDate = DateTime.Now, PaymentMethod = method, Status = "Đã thanh toán" };
+                var orderedItems = (concessions ?? Enumerable.Empty<ConcessionOrderItem>()).ToList();
+                var concessionMoney = orderedItems.Sum(x => x.TotalPrice);
+                var booking = new Booking { BookingID = Bookings.Count + 1001, UserID = userId, ShowTimeID = showTimeId, SeatNames = seats.ToList(), TicketMoney = ticketMoney, ConcessionMoney = concessionMoney, Concessions = orderedItems, TotalMoney = ticketMoney + concessionMoney, BookingDate = DateTime.Now, PaymentMethod = method, Status = "Đã thanh toán" };
                 booking.Code = "PHP" + booking.BookingDate.ToString("yyMMdd") + booking.BookingID; Bookings.Add(booking); return booking;
             }
         }
 
         public static List<Booking> GetBookings(int userId) { lock (SyncRoot) return Bookings.Where(x => x.UserID == userId).OrderByDescending(x => x.BookingDate).ToList(); }
+
+        public static StoreOrder AddStoreOrder(int userId, IEnumerable<ConcessionOrderItem> items, string method)
+        {
+            lock (SyncRoot)
+            {
+                var orderedItems = (items ?? Enumerable.Empty<ConcessionOrderItem>()).ToList();
+                var order = new StoreOrder
+                {
+                    OrderID = StoreOrders.Count + 5001,
+                    UserID = userId,
+                    Items = orderedItems,
+                    TotalMoney = orderedItems.Sum(x => x.TotalPrice),
+                    OrderDate = DateTime.Now,
+                    PaymentMethod = method,
+                    Status = "Đã thanh toán"
+                };
+                order.Code = "SHOP" + order.OrderDate.ToString("yyMMdd") + order.OrderID;
+                StoreOrders.Add(order);
+                return order;
+            }
+        }
+
+        public static List<StoreOrder> GetStoreOrders(int userId)
+        {
+            lock (SyncRoot) return StoreOrders.Where(x => x.UserID == userId).OrderByDescending(x => x.OrderDate).ToList();
+        }
 
         private static Movy Movie(int id, string title, string genre, int duration, string director, string actors, string description, decimal rating, string age, bool hot, bool early)
         {
@@ -255,7 +306,7 @@ namespace MovieTicketDB.Models
                 MovieID = id, Title = title, Genre = genre, Duration = duration, Director = director, Actors = actors, Description = description,
                 Accent = new[] { "#ff7a45", "#e94f64", "#f1b93a", "#4fa6a2", "#6d8f62", "#8c63d9" }[(id - 1) % 6],
                 Rating = rating, AgeLimit = age, Language = "Tiếng Việt / Phụ đề", ReleaseDate = DateTime.Today.AddDays(upcoming ? id - 8 : id - 10),
-                Status = upcoming ? "Sắp chiếu" : "Đang chiếu", Poster = "movie" + id + ".jpg", Country = id % 3 == 0 ? "Việt Nam" : "Mỹ",
+                Status = upcoming ? "Sắp chiếu" : "Đang chiếu", Poster = "film" + id + ".jpg", Country = id % 3 == 0 ? "Việt Nam" : "Mỹ",
                 Format = id % 2 == 0 ? "2D, IMAX" : "2D, Dolby Atmos", IsHot = hot, IsEarlyAccess = early, Cast = BuildCast(id, actors)
             };
         }
@@ -265,13 +316,18 @@ namespace MovieTicketDB.Models
             return (actors ?? "").Split(',').Select((name, index) => new CastMember
             {
                 Name = name.Trim(), Character = index == 0 ? "Vai chính" : "Vai phụ",
-                Image = "movie" + (((movieId + index + 7) % 20) + 1) + ".jpg"
+                Image = "film" + (((movieId + index + 7) % 20) + 1) + ".jpg"
             }).ToList();
         }
 
         private static Event Event(int id, string title, string label, string description, string image, string accent, int days)
         {
             return new Event { EventID = id, Title = title, Label = label, Description = description, Image = image, Accent = accent, EndDate = DateTime.Today.AddDays(days) };
+        }
+
+        private static ConcessionProduct Product(int id, string name, string category, string description, decimal price, string accent, string image)
+        {
+            return new ConcessionProduct { ProductID = id, Name = name, Category = category, Description = description, BasePrice = price, Accent = accent, Image = image };
         }
 
         private static User CloneUser(User x) { return new User { UserID = x.UserID, UserName = x.UserName, FullName = x.FullName, Email = x.Email, Phone = x.Phone, Role = x.Role }; }

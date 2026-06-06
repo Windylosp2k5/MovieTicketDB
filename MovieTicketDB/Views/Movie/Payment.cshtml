@@ -1,20 +1,17 @@
 @model MovieTicketDB.Models.PaymentViewModel
 @{
     ViewBag.Title = "Thanh toán";
+    var qrOptions = Model.QrOptions.ToList();
+    var firstQr = qrOptions.First();
 }
 <section class="page-shell">
     <div class="container payment-page">
         <div class="section-head">
-            <div><div class="eyebrow">Bước 3 / 3</div><h1 class="page-title">Thanh toán</h1></div>
+            <div><div class="eyebrow">Bước 4 / 4</div><h1 class="page-title">Thanh toán</h1></div>
             <p>Giao dịch <strong>@Model.PaymentCode</strong> hết hạn lúc <strong>@Model.ExpiresAt.ToString("HH:mm")</strong>.</p>
         </div>
-
-        @if (!ViewData.ModelState.IsValid)
-        {
-            <div class="alert alert-error">@Html.ValidationSummary()</div>
-        }
-
-        <form method="post" action="@Url.Action("ConfirmPayment")" id="paymentForm">
+        @if (!ViewData.ModelState.IsValid) { <div class="alert alert-error">@Html.ValidationSummary()</div> }
+        <form method="post" action="@Url.Action("ConfirmPayment")">
             @Html.AntiForgeryToken()
             <div class="payment-layout">
                 <div class="panel">
@@ -22,67 +19,69 @@
                     <div class="summary-row"><span>Rạp</span><strong>@Model.ShowTime.Room.Cinema.CinemaName</strong></div>
                     <div class="summary-row"><span>Suất chiếu</span><strong>@Model.ShowTime.StartTime.ToString(@"hh\:mm") · @Model.ShowTime.ShowDate.ToString("dd/MM/yyyy")</strong></div>
                     <div class="summary-row"><span>Ghế</span><strong>@string.Join(", ", Model.SeatNames)</strong></div>
-                    <div class="summary-row"><span>Thành tiền</span><strong class="total">@Model.TotalMoney.ToString("N0")đ</strong></div>
-
+                    <div class="summary-row"><span>Tiền vé</span><strong>@Model.TicketMoney.ToString("N0")đ</strong></div>
+                    @if (Model.Concessions.Any())
+                    {
+                        <div class="payment-food">
+                            <span>Bắp &amp; nước</span>
+                            @foreach (var item in Model.Concessions)
+                            {
+                                <div><span>@item.ProductName × @item.Quantity</span><strong>@item.TotalPrice.ToString("N0")đ</strong></div>
+                            }
+                        </div>
+                    }
+                    <div class="summary-row"><span>Tiền bắp &amp; nước</span><strong>@Model.ConcessionMoney.ToString("N0")đ</strong></div>
+                    <div class="summary-row"><span>Tổng thanh toán</span><strong class="total">@Model.TotalMoney.ToString("N0")đ</strong></div>
                     <h3>Phương thức thanh toán</h3>
                     <div class="payment-methods">
-                        <label class="payment-option"><input type="radio" name="paymentMethod" value="QR" checked /><span>QR ngân hàng</span></label>
-                        <label class="payment-option"><input type="radio" name="paymentMethod" value="MOMO" /><span>MoMo</span></label>
-                        <label class="payment-option"><input type="radio" name="paymentMethod" value="ZALOPAY" /><span>ZaloPay</span></label>
-                        <label class="payment-option"><input type="radio" name="paymentMethod" value="CARD" /><span>Thẻ ngân hàng</span></label>
-                        <label class="payment-option"><input type="radio" name="paymentMethod" value="COUNTER" /><span>Tại quầy</span></label>
+                        @foreach (var option in qrOptions)
+                        {
+                            <label class="payment-option payment-option-@option.Code.ToLower()">
+                                <input type="radio" name="paymentMethod" value="@option.Code" @(option.Code == firstQr.Code ? "checked" : "") />
+                                <span><b>@option.Name</b><small>Quét mã QR</small></span>
+                            </label>
+                        }
                     </div>
-
-                    <label class="payment-confirm" id="paymentConfirm">
-                        <input type="checkbox" name="paymentConfirmed" value="true" />
-                        <span>Tôi đã chuyển đúng số tiền và nội dung thanh toán.</span>
-                    </label>
+                    <label class="payment-confirm" id="paymentConfirm"><input type="checkbox" name="paymentConfirmed" value="true" /><span>Tôi đã thanh toán đúng số tiền và nội dung hiển thị cạnh mã QR.</span></label>
                     <button class="btn btn-primary payment-submit" type="submit">Xác nhận thanh toán @Model.TotalMoney.ToString("N0")đ</button>
-                    <p class="payment-note">Bản demo mô phỏng xác nhận giao dịch. Hệ thống thực tế cần webhook từ ngân hàng hoặc cổng thanh toán.</p>
+                    <p class="payment-note">Các QR hiện là mô phỏng cho đồ án. Khi triển khai thật cần API và webhook xác nhận từ từng cổng thanh toán.</p>
                 </div>
-
-                <aside class="panel qr-panel" id="qrPanel">
+                <aside class="panel qr-panel" id="qrPanel" style="--qr-accent:@firstQr.Accent">
                     <div class="eyebrow">Quét để thanh toán</div>
-                    <div class="qr-frame">
-                        <img src="data:image/png;base64,@Model.QrCodeBase64" alt="Mã QR thanh toán @Model.PaymentCode" />
-                    </div>
-                    <div class="qr-bank">PHP CINEMA DEMO BANK</div>
-                    <div class="qr-account">Số tài khoản: <strong>1900 1234 5678</strong></div>
+                    <div class="qr-provider" id="qrProvider">@firstQr.Name</div>
+                    <div class="qr-frame"><img id="qrImage" src="data:image/png;base64,@firstQr.QrCodeBase64" alt="Mã QR thanh toán" /></div>
+                    <div class="qr-bank" id="qrReceiver">@firstQr.Receiver</div>
+                    <div class="qr-account">Tài khoản: <strong id="qrAccount">@firstQr.Account</strong></div>
                     <div class="qr-amount">@Model.TotalMoney.ToString("N0")đ</div>
                     <div class="qr-content">Nội dung: <strong>@Model.PaymentCode</strong></div>
                     <div class="qr-timer">Còn lại <strong id="countdown" data-expire="@Model.ExpiresAt.ToString("o")">10:00</strong></div>
                 </aside>
             </div>
+            <div id="qrData" hidden>
+                @foreach (var option in qrOptions) { <i data-code="@option.Code" data-name="@option.Name" data-receiver="@option.Receiver" data-account="@option.Account" data-accent="@option.Accent" data-image="@option.QrCodeBase64"></i> }
+            </div>
         </form>
     </div>
 </section>
-
 @section scripts {
 <script>
 (function () {
-    var methods = document.querySelectorAll('input[name="paymentMethod"]');
-    var qrPanel = document.getElementById('qrPanel');
-    var confirmBox = document.getElementById('paymentConfirm');
+    var methods = document.querySelectorAll('input[name="paymentMethod"]'), qrPanel = document.getElementById('qrPanel'), confirmBox = document.getElementById('paymentConfirm'), qrMethods = ['QR','MOMO','ZALOPAY','VNPAY'];
     function updateMethod() {
-        var selected = document.querySelector('input[name="paymentMethod"]:checked');
-        var isQr = selected && selected.value === 'QR';
-        qrPanel.style.display = isQr ? '' : 'none';
-        confirmBox.style.display = isQr ? 'flex' : 'none';
+        var selected = document.querySelector('input[name="paymentMethod"]:checked'), code = selected ? selected.value : '', isQr = qrMethods.indexOf(code) >= 0;
+        qrPanel.style.display = isQr ? '' : 'none'; confirmBox.style.display = isQr ? 'flex' : 'none';
+        if (!isQr) return;
+        var data = document.querySelector('#qrData [data-code="' + code + '"]');
+        document.getElementById('qrImage').src = 'data:image/png;base64,' + data.getAttribute('data-image');
+        document.getElementById('qrProvider').textContent = data.getAttribute('data-name');
+        document.getElementById('qrReceiver').textContent = data.getAttribute('data-receiver');
+        document.getElementById('qrAccount').textContent = data.getAttribute('data-account');
+        qrPanel.style.setProperty('--qr-accent', data.getAttribute('data-accent'));
     }
-    for (var i = 0; i < methods.length; i++) methods[i].addEventListener('change', updateMethod);
-    updateMethod();
-
-    var countdown = document.getElementById('countdown');
-    var expires = new Date(countdown.getAttribute('data-expire')).getTime();
-    function tick() {
-        var seconds = Math.max(0, Math.floor((expires - Date.now()) / 1000));
-        var minutes = Math.floor(seconds / 60);
-        var remain = seconds % 60;
-        countdown.textContent = minutes + ':' + (remain < 10 ? '0' : '') + remain;
-        if (seconds === 0) countdown.parentElement.classList.add('expired');
-    }
-    tick();
-    setInterval(tick, 1000);
+    for (var i=0;i<methods.length;i++) methods[i].addEventListener('change',updateMethod); updateMethod();
+    var countdown=document.getElementById('countdown'),expires=new Date(countdown.getAttribute('data-expire')).getTime();
+    function tick(){var seconds=Math.max(0,Math.floor((expires-Date.now())/1000));countdown.textContent=Math.floor(seconds/60)+':'+(seconds%60<10?'0':'')+seconds%60;if(seconds===0)countdown.parentElement.classList.add('expired');}
+    tick();setInterval(tick,1000);
 })();
 </script>
 }

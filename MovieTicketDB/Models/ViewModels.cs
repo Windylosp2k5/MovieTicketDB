@@ -28,10 +28,47 @@ namespace MovieTicketDB.Models
     {
         public ShowTime ShowTime { get; set; }
         public List<string> SeatNames { get; set; }
+        public decimal TicketMoney { get; set; }
+        public decimal ConcessionMoney { get; set; }
+        public List<ConcessionOrderItem> Concessions { get; set; }
         public decimal TotalMoney { get; set; }
         public string PaymentCode { get; set; }
         public string QrCodeBase64 { get; set; }
         public System.DateTime ExpiresAt { get; set; }
+        public IEnumerable<PaymentQrOption> QrOptions { get; set; }
+    }
+
+    public class StoreViewModel
+    {
+        public ShowTime ShowTime { get; set; }
+        public List<string> SeatNames { get; set; }
+        public decimal TicketMoney { get; set; }
+        public IEnumerable<ConcessionProduct> Products { get; set; }
+    }
+
+    public class StorePaymentViewModel
+    {
+        public List<ConcessionOrderItem> Items { get; set; }
+        public decimal TotalMoney { get; set; }
+        public string PaymentCode { get; set; }
+        public System.DateTime ExpiresAt { get; set; }
+        public IEnumerable<PaymentQrOption> QrOptions { get; set; }
+    }
+
+    public class StoreOrderReceiptViewModel
+    {
+        public StoreOrder Order { get; set; }
+        public User User { get; set; }
+    }
+
+    public class PaymentQrOption
+    {
+        public string Code { get; set; }
+        public string Name { get; set; }
+        public string Receiver { get; set; }
+        public string Account { get; set; }
+        public string QrCodeBase64 { get; set; }
+        public string Accent { get; set; }
     }
 
     public class TicketReceiptViewModel

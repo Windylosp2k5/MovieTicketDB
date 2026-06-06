@@ -1,0 +1,101 @@
+@model IEnumerable<MovieTicketDB.Models.ConcessionProduct>
+@{
+    ViewBag.Title = "Cửa hàng";
+}
+<section class="page-shell store-page store-menu-page">
+    <div class="container">
+        <div class="section-head">
+            <div>
+                <div class="eyebrow">PHP Cinema Store</div>
+                <h1 class="page-title">Mua bắp nước, không cần đặt vé</h1>
+            </div>
+            <p>Chọn món, thanh toán online và nhận tại quầy PHP Cinema. Hoàn toàn độc lập với vé xem phim.</p>
+        </div>
+        @if (TempData["StoreError"] != null) { <div class="alert alert-error">@TempData["StoreError"]</div> }
+
+        <form method="post" action="@Url.Action("StoreCheckout")" id="storeForm">
+            @Html.AntiForgeryToken()
+            <div class="store-layout">
+                <div class="store-products">
+                    @foreach (var group in Model.GroupBy(x => x.Category))
+                    {
+                        <div class="store-group">
+                            <div class="store-group-title">
+                                <div><div class="eyebrow">@group.Key</div><h2>@(group.Key == "Drink" ? "Nước mát lạnh" : group.Key == "Combo" ? "Combo tiết kiệm" : "Bắp rang thơm giòn")</h2></div>
+                                <span>Giá niêm yết theo từng sản phẩm</span>
+                            </div>
+                            <div class="store-grid">
+                                @foreach (var product in group)
+                                {
+                                    <article class="store-card" style="--product-accent:@product.Accent">
+                                        <input type="hidden" name="productIds" value="@product.ProductID" />
+                                        <input type="hidden" name="sizes" value="" />
+                                        <div class="product-art"><img src="@Url.Content("~/Content/images/" + product.Image)" alt="@product.Name" /></div>
+                                        <div class="product-info">
+                                            <small>@product.Category</small>
+                                            <h3>@product.Name</h3>
+                                            <p>@product.Description</p>
+                                            <strong class="product-price" data-base="@product.BasePrice">@product.BasePrice.ToString("N0")đ</strong>
+                                        </div>
+                                        <div class="product-controls product-controls-single">
+                                            <label>Số lượng
+                                                <input class="field product-quantity" type="number" name="quantities" min="0" max="10" value="0" />
+                                            </label>
+                                        </div>
+                                    </article>
+                                }
+                            </div>
+                        </div>
+                    }
+                </div>
+                <aside class="panel booking-summary store-summary">
+                    <div class="eyebrow">Giỏ hàng tự do</div>
+                    <h2>Đơn bắp &amp; nước</h2>
+                    <p class="store-independent-note">Không cần chọn phim, suất chiếu hoặc ghế.</p>
+                    <div class="store-cart" id="storeCart"><p>Chưa chọn sản phẩm.</p></div>
+                    <div class="summary-row"><span>Tổng thanh toán</span><strong class="total" id="grandTotal">0đ</strong></div>
+                    <button class="btn btn-primary store-checkout" id="checkoutButton" type="submit" disabled>Thanh toán đơn Store</button>
+                    @if (Session["UserID"] == null)
+                    {
+                        <p class="payment-note">Bạn sẽ được yêu cầu đăng nhập khi thanh toán để nhận mã đơn và email.</p>
+                    }
+                    else
+                    {
+                        <a class="store-back" href="@Url.Action("StoreOrders")">Xem đơn Store của tôi</a>
+                    }
+                </aside>
+            </div>
+        </form>
+    </div>
+</section>
+@section scripts {
+<script>
+(function () {
+    var cards = document.querySelectorAll('.store-card'), cart = document.getElementById('storeCart');
+    var grandTotal = document.getElementById('grandTotal'), checkout = document.getElementById('checkoutButton');
+    function money(value) { return value.toLocaleString('vi-VN') + 'đ'; }
+    function update() {
+        var total = 0, lines = [];
+        for (var i = 0; i < cards.length; i++) {
+            var quantity = parseInt(cards[i].querySelector('.product-quantity').value, 10) || 0;
+            var base = parseInt(cards[i].querySelector('.product-price').getAttribute('data-base'), 10);
+            var unitPrice = base;
+            var name = cards[i].querySelector('h3').textContent;
+            cards[i].classList.toggle('selected', quantity > 0);
+            cards[i].querySelector('.product-price').textContent = money(unitPrice);
+            if (quantity > 0) {
+                total += unitPrice * quantity;
+                lines.push('<div><span>' + name + ' × ' + quantity + '</span><strong>' + money(unitPrice * quantity) + '</strong></div>');
+            }
+        }
+        cart.innerHTML = lines.length ? lines.join('') : '<p>Chưa chọn sản phẩm.</p>';
+        grandTotal.textContent = money(total);
+        checkout.disabled = total === 0;
+    }
+    for (var i = 0; i < cards.length; i++) {
+        cards[i].querySelector('.product-quantity').addEventListener('input', update);
+    }
+    update();
+})();
+</script>
+}
