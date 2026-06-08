@@ -4,6 +4,7 @@
     <div class="container">
         <div class="section-head"><div><div class="eyebrow">PHP Cinema Control Center</div><h1 class="page-title">Quản trị hệ thống</h1></div><a class="btn btn-outline" href="@Url.Action("Index","Movie")">Xem website</a></div>
         @if (TempData["AdminSuccess"] != null) { <div class="alert alert-success">@TempData["AdminSuccess"]</div> }
+        @if (TempData["AdminError"] != null) { <div class="alert alert-error">@TempData["AdminError"]</div> }
         <div class="admin-stats">
             <div><span>Phim</span><strong>@Model.Movies.Count()</strong></div><div><span>Suất chiếu</span><strong>@Model.TotalShowTimes</strong></div><div><span>Người dùng</span><strong>@Model.Users.Count()</strong></div><div><span>Vé đã bán</span><strong>@Model.Bookings.Count()</strong></div><div><span>Doanh thu</span><strong>@Model.Revenue.ToString("N0")đ</strong></div>
         </div>
@@ -12,7 +13,7 @@
         <section class="admin-panel" id="movies">
             <div class="admin-panel-head"><div><h2>Quản lý phim</h2><p>Thêm, sửa, xóa và đánh dấu phim hot/suất sớm.</p></div><a class="btn btn-primary" href="@Url.Action("MovieEdit")">Thêm phim</a></div>
             <div class="admin-table-wrap"><table class="admin-table"><thead><tr><th>Phim</th><th>Thể loại</th><th>Trạng thái</th><th>Đánh giá</th><th></th></tr></thead><tbody>
-                @foreach (var item in Model.Movies) { <tr><td><div class="admin-movie"><img src="@Url.Content("~/Content/images/" + item.Poster)" alt="" /><strong>@item.Title</strong></div></td><td>@item.Genre</td><td>@item.Status @(item.IsHot ? "· Hot" : "") @(item.IsEarlyAccess ? "· Suất sớm" : "")</td><td>@item.Rating</td><td class="admin-actions"><a href="@Url.Action("MovieEdit", new { id=item.MovieID })">Sửa</a><form method="post" action="@Url.Action("MovieDelete")" onsubmit="return confirm('Xóa phim này?')">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.MovieID" /><button type="submit">Xóa</button></form></td></tr> }
+                @foreach (var item in Model.Movies) { var blockReason=MovieTicketDB.Models.CinemaStore.GetMovieDeleteBlockReason(item.MovieID); <tr><td><div class="admin-movie"><img src="@Url.Content("~/Content/images/" + item.Poster)" alt="" /><strong>@item.Title</strong></div></td><td>@item.Genre</td><td>@item.Status @(item.IsHot ? "· Hot" : "") @(item.IsEarlyAccess ? "· Suất sớm" : "")</td><td>@item.Rating</td><td class="admin-actions"><a href="@Url.Action("MovieEdit", new { id=item.MovieID })">Sửa</a>@if(string.IsNullOrWhiteSpace(blockReason)){<form method="post" action="@Url.Action("MovieDelete")" onsubmit="return confirm('Xóa phim này?')">@Html.AntiForgeryToken()<input type="hidden" name="id" value="@item.MovieID" /><button type="submit">Xóa</button></form>}else{<button type="button" disabled title="@blockReason">Không thể xóa</button>}</td></tr> }
             </tbody></table></div>
         </section>
 

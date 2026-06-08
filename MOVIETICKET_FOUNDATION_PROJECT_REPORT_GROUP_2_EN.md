@@ -101,11 +101,14 @@ Based on these practical needs, our group chose to develop **Web MovieTicket**, 
 - Electronic ticket and Store pickup-code generation.
 - Email delivery through SMTP with an HTML preview fallback.
 - Management of movies, cinemas, showtimes, events, users, and booking statuses.
+- Persistent JSON state storage across application restarts.
+- Direct movie poster upload from the administrator's computer.
+- Referential protection that prevents the deletion of movies or showtimes with related ticket data.
 
 ### Current Limitations
 
-- Application data is stored in memory through the `CinemaStore` class instead of a production SQL Server database.
-- Newly generated data is lost when the application restarts.
+- The system uses `CinemaStore` together with `App_Data/cinema-state.json` for persistent storage instead of SQL Server as its primary production database.
+- JSON storage is suitable for a foundation project and a single web process, but not for high traffic or multiple application servers.
 - Payment QR codes are simulations and are not connected to real Merchant APIs or payment webhooks.
 - Actual email delivery requires valid SMTP settings in `Web.config`.
 - Automatic refund and transaction cancellation functions have not been implemented.
@@ -163,7 +166,7 @@ Based on these practical needs, our group chose to develop **Web MovieTicket**, 
 | F13 | Ticket history | Displays ticket codes and showtime information |
 | F14 | Store order history | Displays pickup codes and ordered products |
 | F15 | Email delivery | Sends tickets or pickup codes to customer email addresses |
-| F16 | Movie administration | Allows administrators to add, update, and delete movies |
+| F16 | Movie administration | Allows administrators to add, edit, upload posters, deactivate, or validly delete movies |
 | F17 | Cinema administration | Allows administrators to add, update, and delete cinemas |
 | F18 | Showtime administration | Allows administrators to create and manage showtimes |
 | F19 | Event administration | Allows administrators to manage promotions |
@@ -181,6 +184,9 @@ Based on these practical needs, our group chose to develop **Web MovieTicket**, 
 - Product quantity must be limited to a valid range.
 - Payment QR codes must have an expiration time to simulate real transactions.
 - If SMTP is unavailable, the system must still create a ticket and save an HTML email preview.
+- Administration, account, booking, and Store changes must be persisted to a JSON state file.
+- Uploaded posters must be JPG/PNG files no larger than 5 MB and at least 200 x 300 pixels.
+- Movies with showtimes or issued tickets must not be permanently deleted.
 
 ## 2.3. Ticket Booking Workflow
 
@@ -268,7 +274,19 @@ flowchart LR
 | `StoreOrder` | Stores an independent Store transaction |
 | `Event` | Stores event and promotion information |
 
-## 3.3. Proposed SQL Server Data Model
+## 3.3. Current Persistence Mechanism
+
+On the first application start, `CinemaStore` creates the built-in seed data in memory. After every modifying operation, including movie editing, account registration, ticket booking, and Store ordering, the required application state is serialized to:
+
+```text
+MovieTicketDB/App_Data/cinema-state.json
+```
+
+When IIS Express or the website restarts, the application reads the JSON file and reconnects the relationships among movies, cinemas, rooms, and showtimes. Therefore, administrator changes and transactions are no longer lost when the website stops.
+
+The state file is excluded through `.gitignore` because it contains operational user data and hashed passwords.
+
+## 3.4. Proposed SQL Server Data Model
 
 ```mermaid
 erDiagram
@@ -302,7 +320,7 @@ erDiagram
 - `StoreOrderItems(OrderID, FoodID, Quantity, UnitPrice)`
 - `Events(EventID, Title, Description, Image, EndDate)`
 
-## 3.4. Store Data Design
+## 3.5. Store Data Design
 
 The Store currently contains 17 products divided into three groups:
 
@@ -312,7 +330,7 @@ The Store currently contains 17 products divided into three groups:
 
 Each product contains an identifier, name, category, description, price, accent color, and image path. Product prices are always retrieved and validated on the server to prevent price manipulation through browser-side JavaScript.
 
-## 3.5. User Interface Design
+## 3.6. User Interface Design
 
 The website uses a dark color scheme with orange-red accent colors. Its main design components include:
 
@@ -365,6 +383,7 @@ MovieTicketDB/
 │   ├── Site.css
 │   └── images/
 ├── App_Data/
+│   ├── cinema-state.json
 │   └── MailDrop/
 └── Web.config
 ```
@@ -465,13 +484,32 @@ The Admin section provides:
 - Movie and showtime statistics.
 - User lists.
 - Booking lists.
-- Movie creation, editing, and deletion.
+- Movie creation, editing, poster upload, status changes, and valid deletion.
 - Event creation, editing, and deletion.
 - Cinema creation, editing, and deletion.
 - Showtime creation, editing, and deletion.
 - Automatic showtime rebuilding.
 - User role assignment.
 - Booking status updates.
+
+### Poster Upload from the Administrator's Computer
+
+The movie form uses `multipart/form-data` and `HttpPostedFileBase`. An administrator may select an image directly from Documents or any local directory. The server:
+
+1. Accepts JPG, JPEG, or PNG extensions.
+2. Limits file size to 5 MB.
+3. Verifies that the content is a valid image.
+4. Requires a minimum resolution of 200 x 300 pixels.
+5. Generates a unique filename and saves it in `Content/images`.
+6. Preserves the old poster when no new file is selected.
+
+### Movie and Showtime Deletion Rules
+
+- A movie with existing showtimes cannot be deleted.
+- A movie with issued tickets must remain available for transaction history.
+- A showtime with issued tickets cannot be deleted.
+- An administrator can change a historical movie to **Discontinued** (`Ngừng chiếu`). It is hidden from customers while remaining available in Admin and ticket records.
+- Rebuilding all showtimes is blocked after bookings exist to protect ticket-to-showtime relationships.
 
 ---
 
@@ -510,6 +548,11 @@ The group completed the application's primary business workflows:
 | 13 | Log in as Administrator | The user is redirected to the Admin dashboard | Passed |
 | 14 | Open Admin page as Customer | Access is denied | Passed |
 | 15 | Display Store product images | All 17 product records have valid images | Passed |
+| 16 | Edit a movie and restart IIS | The edited information remains available | Passed |
+| 17 | Upload a JPG poster | The file is stored and assigned to the movie | Passed |
+| 18 | Delete a movie with showtimes | The system blocks deletion and explains why | Passed |
+| 19 | Delete a showtime with tickets | The system refuses the deletion | Passed |
+| 20 | Mark a movie as discontinued | The movie is hidden from customers while history remains | Passed |
 
 ## 5.3. Strengths
 
@@ -523,7 +566,7 @@ The group completed the application's primary business workflows:
 
 ## 5.4. Current Weaknesses
 
-- A production database has not been integrated.
+- SQL Server is not yet the primary store; JSON has limitations for querying and concurrent writes.
 - Entity Framework and the Repository Pattern are not currently used.
 - QR payments are not verified through webhooks.
 - Passwords currently use SHA-256 without a salt instead of a dedicated password-hashing algorithm such as BCrypt.
@@ -544,7 +587,7 @@ Through the project, the group strengthened its knowledge of ASP.NET MVC, C#, Ra
 
 ## 6.2. Future Development
 
-- Migrate all data to SQL Server.
+- Migrate JSON persistence to SQL Server for production use.
 - Use Entity Framework Code First.
 - Add foreign-key constraints and database transactions for seat booking.
 - Integrate a real payment gateway.
@@ -643,6 +686,8 @@ Real credentials must not be included in the report or committed to Git.
 10. Open My Store Orders and verify the pickup code.
 11. Log out and log in using the `admin` account.
 12. Introduce the dashboard and administration functions.
+13. Edit a movie, upload a poster from the computer, and verify the new image.
+14. Explain why deletion is disabled for movies with showtimes or ticket history.
 
 ---
 
@@ -664,11 +709,18 @@ A Booking is always connected to a movie, showtime, and seat, while a StoreOrder
 
 No. The current QR code simulates payment data. A production system requires a Merchant API and a webhook to verify that money has actually been received.
 
-## Why is data lost when the application restarts?
+## Is data still lost when the application restarts?
 
-The current project stores data in static in-memory collections. A future version should use SQL Server and Entity Framework for persistent storage.
+No. The current version writes application state to `App_Data/cinema-state.json` after each change and reloads it during startup. SQL Server remains the recommended production upgrade.
+
+## Why can a movie with issued tickets not be deleted?
+
+A ticket is a transaction record that must continue to reference its movie, showtime, cinema, and seats. Deleting these records would break historical integrity. The system therefore uses the **Discontinued** status to hide the movie from customers instead of permanently deleting it.
+
+## How is poster upload validated?
+
+The server accepts only JPG or PNG files, limits each file to 5 MB, validates that the content is a real image, and requires a minimum resolution of 200 x 300 pixels. A unique filename is generated before storage.
 
 ## How does the system prevent duplicate seat booking?
 
 Before displaying the payment page, the server verifies that each seat belongs to the selected room and has not already appeared in a booking for the showtime. With a production database, a transaction and database constraints should also be used to handle concurrent customers.
-

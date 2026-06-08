@@ -102,11 +102,14 @@ Từ nhu cầu trên, nhóm lựa chọn xây dựng **Web MovieTicket**, một 
 - Tạo vé điện tử và mã nhận món.
 - Gửi email thông qua SMTP hoặc lưu bản email HTML dự phòng.
 - Quản trị phim, rạp, suất chiếu, sự kiện, người dùng và trạng thái vé.
+- Lưu trạng thái vận hành vào file JSON để dữ liệu vẫn còn sau khi ứng dụng khởi động lại.
+- Cho phép Admin tải poster phim trực tiếp từ máy tính.
+- Bảo toàn lịch sử vé bằng cách chặn xóa phim hoặc suất chiếu đang có dữ liệu liên quan.
 
 ### Giới hạn hiện tại
 
-- Dữ liệu đang được lưu trong bộ nhớ bằng lớp `CinemaStore`, chưa kết nối SQL Server thật.
-- Dữ liệu phát sinh sẽ mất khi ứng dụng khởi động lại.
+- Hệ thống sử dụng `CinemaStore` kết hợp file `App_Data/cinema-state.json` để lưu dữ liệu bền vững, chưa sử dụng SQL Server làm kho dữ liệu chính.
+- File JSON phù hợp với quy mô đồ án và một tiến trình web; chưa phù hợp với hệ thống nhiều máy chủ hoặc lượng truy cập lớn.
 - QR thanh toán hiện là QR mô phỏng, chưa tích hợp API Merchant và webhook thật.
 - Gửi email thật yêu cầu cấu hình tài khoản SMTP trong `Web.config`.
 - Hệ thống chưa có chức năng hoàn tiền và hủy giao dịch tự động.
@@ -164,7 +167,7 @@ Từ nhu cầu trên, nhóm lựa chọn xây dựng **Web MovieTicket**, một 
 | F13 | Xem vé | Hiển thị mã vé và thông tin suất chiếu |
 | F14 | Xem đơn Store | Hiển thị mã nhận món và danh sách sản phẩm |
 | F15 | Gửi email | Gửi vé hoặc mã nhận món đến email người dùng |
-| F16 | Quản trị phim | Admin thêm, sửa, xóa phim |
+| F16 | Quản trị phim | Admin thêm, sửa, upload poster, ngừng chiếu hoặc xóa phim hợp lệ |
 | F17 | Quản trị rạp | Admin thêm, sửa, xóa rạp |
 | F18 | Quản trị suất chiếu | Admin thêm, sửa, xóa và tạo lại lịch chiếu |
 | F19 | Quản trị sự kiện | Admin quản lý ưu đãi |
@@ -182,6 +185,9 @@ Từ nhu cầu trên, nhóm lựa chọn xây dựng **Web MovieTicket**, một 
 - Số lượng sản phẩm được giới hạn từ 0 đến 10 cho mỗi loại.
 - QR có thời gian hết hạn để mô phỏng giao dịch thực tế.
 - Khi SMTP chưa cấu hình, hệ thống vẫn tạo vé và lưu bản email dự phòng.
+- Mọi thay đổi quản trị, tài khoản và giao dịch được ghi xuống file JSON bằng thao tác thay thế file an toàn.
+- Poster upload chỉ chấp nhận JPG/PNG, tối đa 5 MB và kích thước tối thiểu 200 x 300 px.
+- Phim còn suất chiếu hoặc đã phát sinh vé không được xóa cứng.
 
 ## 2.3. Quy trình đặt vé
 
@@ -269,7 +275,19 @@ flowchart LR
 | `StoreOrder` | Lưu đơn mua Store độc lập |
 | `Event` | Lưu sự kiện và ưu đãi |
 
-## 3.3. Mô hình dữ liệu đề xuất khi sử dụng SQL Server
+## 3.3. Cơ chế lưu trữ hiện tại
+
+Khi ứng dụng khởi động lần đầu, `CinemaStore` tạo dữ liệu mẫu trong bộ nhớ. Sau mỗi thao tác thay đổi như sửa phim, tạo tài khoản, đặt vé hoặc đặt Store, toàn bộ trạng thái cần thiết được tuần tự hóa thành JSON và lưu tại:
+
+```text
+MovieTicketDB/App_Data/cinema-state.json
+```
+
+Khi IIS Express hoặc website khởi động lại, hệ thống đọc file JSON và nối lại các tham chiếu giữa phim, phòng, rạp và suất chiếu. Nhờ đó, thay đổi trong trang Admin và các giao dịch không còn bị mất sau khi tắt website.
+
+File trạng thái được đưa vào `.gitignore` vì chứa dữ liệu vận hành, người dùng và mật khẩu đã băm.
+
+## 3.4. Mô hình dữ liệu đề xuất khi sử dụng SQL Server
 
 ```mermaid
 erDiagram
@@ -303,7 +321,7 @@ erDiagram
 - `StoreOrderItems(OrderID, FoodID, Quantity, UnitPrice)`
 - `Events(EventID, Title, Description, Image, EndDate)`
 
-## 3.4. Thiết kế dữ liệu Store
+## 3.5. Thiết kế dữ liệu Store
 
 Store hiện có 17 sản phẩm, chia thành ba nhóm:
 
@@ -313,7 +331,7 @@ Store hiện có 17 sản phẩm, chia thành ba nhóm:
 
 Mỗi sản phẩm có mã, tên, danh mục, mô tả, giá, màu chủ đạo và đường dẫn ảnh. Giá được kiểm tra lại ở server để tránh người dùng thay đổi giá bằng JavaScript.
 
-## 3.5. Thiết kế giao diện
+## 3.6. Thiết kế giao diện
 
 Website sử dụng tông màu tối kết hợp màu cam đỏ làm màu nhấn. Các thành phần chính gồm:
 
@@ -366,6 +384,7 @@ MovieTicketDB/
 │   ├── Site.css
 │   └── images/
 ├── App_Data/
+│   ├── cinema-state.json
 │   └── MailDrop/
 └── Web.config
 ```
@@ -466,13 +485,32 @@ Trang Admin cung cấp:
 - Số lượng phim và suất chiếu.
 - Danh sách người dùng.
 - Danh sách booking.
-- Thêm, sửa, xóa phim.
+- Thêm, sửa, upload poster, chuyển trạng thái và xóa phim khi hợp lệ.
 - Thêm, sửa, xóa sự kiện.
 - Thêm, sửa, xóa rạp.
 - Thêm, sửa, xóa suất chiếu.
 - Tạo lại lịch chiếu.
 - Thay đổi vai trò người dùng.
 - Cập nhật trạng thái booking.
+
+### Upload poster từ máy tính
+
+Form phim sử dụng `multipart/form-data` và `HttpPostedFileBase`. Admin có thể chọn ảnh trực tiếp từ Documents hoặc thư mục bất kỳ trên máy. Server thực hiện các bước:
+
+1. Kiểm tra phần mở rộng JPG, JPEG hoặc PNG.
+2. Kiểm tra dung lượng không vượt quá 5 MB.
+3. Đọc nội dung ảnh và kiểm tra kích thước tối thiểu 200 x 300 px.
+4. Tạo tên file duy nhất và lưu vào `Content/images`.
+5. Lưu tên poster vào dữ liệu phim.
+6. Giữ poster cũ nếu Admin không chọn file mới.
+
+### Quy tắc xóa phim và suất chiếu
+
+- Phim còn suất chiếu không thể bị xóa.
+- Phim đã có vé được đặt phải giữ lại để bảo toàn lịch sử giao dịch.
+- Suất chiếu đã có vé không thể bị xóa.
+- Với phim không còn kinh doanh nhưng đã có lịch sử, Admin chuyển trạng thái sang **Ngừng chiếu**. Phim sẽ được ẩn khỏi trang khách nhưng vẫn xuất hiện trong Admin và dữ liệu vé.
+- Chức năng tạo lại toàn bộ lịch chiếu bị chặn khi đã có booking, tránh làm mất liên kết giữa vé và suất chiếu.
 
 ---
 
@@ -511,6 +549,11 @@ Nhóm đã hoàn thành website có các luồng nghiệp vụ chính:
 | 13 | Đăng nhập Admin | Chuyển đến dashboard quản trị | Đạt |
 | 14 | Customer mở trang Admin | Bị từ chối truy cập | Đạt |
 | 15 | Hiển thị ảnh Store | 17 sản phẩm có ảnh hợp lệ | Đạt |
+| 16 | Sửa phim và restart IIS | Thông tin đã sửa vẫn còn | Đạt |
+| 17 | Upload poster JPG từ máy | File được lưu và phim sử dụng ảnh mới | Đạt |
+| 18 | Xóa phim còn suất chiếu | Hệ thống chặn và hiển thị lý do | Đạt |
+| 19 | Xóa suất chiếu đã có vé | Hệ thống từ chối xóa | Đạt |
+| 20 | Chuyển phim sang Ngừng chiếu | Phim ẩn khỏi trang khách, lịch sử vẫn còn | Đạt |
 
 ## 5.3. Đánh giá ưu điểm
 
@@ -524,7 +567,7 @@ Nhóm đã hoàn thành website có các luồng nghiệp vụ chính:
 
 ## 5.4. Những điểm còn hạn chế
 
-- Chưa sử dụng cơ sở dữ liệu thật.
+- Chưa sử dụng SQL Server làm kho dữ liệu chính; JSON phù hợp đồ án nhưng hạn chế về truy vấn và đồng thời.
 - Chưa có Entity Framework hoặc Repository Pattern.
 - QR chưa xác nhận bằng webhook.
 - Mật khẩu mới chỉ băm SHA-256, chưa có salt và thuật toán chuyên dụng như BCrypt.
@@ -545,7 +588,7 @@ Thông qua quá trình thực hiện, nhóm đã củng cố kiến thức về 
 
 ## 6.2. Hướng phát triển
 
-- Chuyển dữ liệu sang SQL Server.
+- Chuyển cơ chế JSON sang SQL Server cho môi trường production.
 - Sử dụng Entity Framework Code First.
 - Thiết kế khóa ngoại và transaction cho đặt ghế.
 - Tích hợp cổng thanh toán thật.
@@ -644,6 +687,8 @@ Không đưa mật khẩu thật vào báo cáo hoặc Git.
 10. Mở Đơn Store và kiểm tra mã nhận món.
 11. Đăng xuất và đăng nhập bằng tài khoản `admin`.
 12. Giới thiệu dashboard và các chức năng quản trị.
+13. Sửa một phim, upload poster từ máy và kiểm tra ảnh mới.
+14. Giải thích nút xóa bị khóa khi phim còn suất chiếu hoặc lịch sử vé.
 
 ---
 
@@ -665,11 +710,18 @@ Booking luôn liên quan đến phim, suất chiếu và ghế, trong khi StoreO
 
 Không. QR hiện tại mô phỏng dữ liệu thanh toán. Hệ thống thật cần API Merchant và webhook để xác nhận tiền đã vào tài khoản.
 
-## Vì sao dữ liệu mất khi khởi động lại?
+## Dữ liệu có còn bị mất khi khởi động lại không?
 
-Phiên bản đồ án hiện sử dụng danh sách tĩnh trong bộ nhớ. Hướng phát triển tiếp theo là chuyển sang SQL Server và Entity Framework.
+Không. Phiên bản hiện tại ghi trạng thái vào `App_Data/cinema-state.json` sau mỗi thay đổi và đọc lại khi ứng dụng khởi động. SQL Server vẫn là hướng phát triển phù hợp hơn cho hệ thống production.
+
+## Vì sao không cho xóa phim đã có vé?
+
+Vé là một chứng từ giao dịch và cần tham chiếu đến phim, suất chiếu, rạp và ghế. Xóa phim hoặc suất chiếu sẽ làm mất tính toàn vẹn của lịch sử. Vì vậy hệ thống dùng trạng thái **Ngừng chiếu** để ẩn phim khỏi khách hàng thay vì xóa cứng.
+
+## Upload poster được kiểm soát như thế nào?
+
+Server chỉ chấp nhận JPG hoặc PNG, giới hạn 5 MB, kiểm tra file là ảnh thật và yêu cầu kích thước tối thiểu 200 x 300 px. File được đổi sang tên duy nhất trước khi lưu để hạn chế trùng tên.
 
 ## Hệ thống chống đặt trùng ghế như thế nào?
 
 Trước khi tạo trang thanh toán, server kiểm tra ghế thuộc đúng phòng và chưa xuất hiện trong các booking của suất chiếu. Khi dùng cơ sở dữ liệu thật, cần thêm transaction và ràng buộc để xử lý nhiều người đặt đồng thời.
-

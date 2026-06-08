@@ -19,7 +19,7 @@ namespace MovieTicketDB.Controllers
             var pageNumber = page.GetValueOrDefault(1);
             if (pageNumber < 1) pageNumber = 1;
 
-            var movies = CinemaStore.Movies.AsEnumerable();
+            var movies = CinemaStore.Movies.Where(x => x.Status != "Ngừng chiếu").AsEnumerable();
             if (!string.IsNullOrWhiteSpace(search))
                 movies = movies.Where(x => x.Title.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0 || x.Genre.IndexOf(search, StringComparison.OrdinalIgnoreCase) >= 0);
             if (!string.IsNullOrWhiteSpace(genre))
@@ -28,9 +28,9 @@ namespace MovieTicketDB.Controllers
             return View(new MovieIndexViewModel
             {
                 Movies = movies.ToPagedList(pageNumber, pageSize),
-                FeaturedMovies = CinemaStore.Movies.Take(3).ToList(),
-                Genres = CinemaStore.Movies.SelectMany(x => x.Genre.Split(',')).Select(x => x.Trim()).Distinct().OrderBy(x => x).ToList(),
-                HotMovies = CinemaStore.Movies.Where(x => x.IsHot).OrderByDescending(x => x.Rating).Take(6).ToList(),
+                FeaturedMovies = CinemaStore.Movies.Where(x => x.Status != "Ngừng chiếu").Take(3).ToList(),
+                Genres = CinemaStore.Movies.Where(x => x.Status != "Ngừng chiếu").SelectMany(x => x.Genre.Split(',')).Select(x => x.Trim()).Distinct().OrderBy(x => x).ToList(),
+                HotMovies = CinemaStore.Movies.Where(x => x.Status != "Ngừng chiếu" && x.IsHot).OrderByDescending(x => x.Rating).Take(6).ToList(),
                 UpcomingMovies = CinemaStore.Movies.Where(x => x.Status == "Sắp chiếu").OrderBy(x => x.ReleaseDate).Take(6).ToList(),
                 EarlyMovies = CinemaStore.Movies.Where(x => x.IsEarlyAccess).OrderByDescending(x => x.Rating).Take(6).ToList(),
                 Events = CinemaStore.Events.OrderBy(x => x.EndDate).ToList(),
@@ -47,6 +47,8 @@ namespace MovieTicketDB.Controllers
 
         public ActionResult BuyTicket(int id)
         {
+            var movie = CinemaStore.Movies.FirstOrDefault(x => x.MovieID == id);
+            if (movie == null || movie.Status == "Ngừng chiếu") return HttpNotFound();
             if (Session["UserID"] == null) return RedirectToAction("Login", new { returnUrl = Url.Action("ShowTime", new { id }) });
             return RedirectToAction("ShowTime", new { id });
         }
@@ -55,6 +57,7 @@ namespace MovieTicketDB.Controllers
         {
             var movie = CinemaStore.Movies.FirstOrDefault(x => x.MovieID == id);
             if (movie == null) return HttpNotFound();
+            if (movie.Status == "Ngừng chiếu") return RedirectToAction("Index");
             ViewBag.Movie = movie;
             return View(CinemaStore.ShowTimes.Where(x => x.MovieID == id).OrderBy(x => x.ShowDate).ThenBy(x => x.StartTime).ToList());
         }

@@ -1,7 +1,10 @@
 using MovieTicketDB.Filters;
 using MovieTicketDB.Models;
 using System;
+using System.Drawing;
+using System.IO;
 using System.Linq;
+using System.Web;
 using System.Web.Mvc;
 
 namespace MovieTicketDB.Controllers
@@ -35,13 +38,45 @@ namespace MovieTicketDB.Controllers
         }
 
         [HttpPost, ValidateAntiForgeryToken]
-        public ActionResult MovieEdit(Movy model)
+        public ActionResult MovieEdit(Movy model, HttpPostedFileBase posterFile)
         {
             if (string.IsNullOrWhiteSpace(model.Title) || string.IsNullOrWhiteSpace(model.Genre))
             {
                 ModelState.AddModelError("", "Tên phim và thể loại là bắt buộc.");
                 return View(model);
             }
+            if (posterFile != null && posterFile.ContentLength > 0)
+            {
+                var extension = Path.GetExtension(posterFile.FileName).ToLowerInvariant();
+                if (!new[] { ".jpg", ".jpeg", ".png" }.Contains(extension) || posterFile.ContentLength > 5 * 1024 * 1024)
+                {
+                    ModelState.AddModelError("", "Poster phải là JPG hoặc PNG và không vượt quá 5 MB.");
+                    return View(model);
+                }
+                try
+                {
+                    using (var image = Image.FromStream(posterFile.InputStream, true, true))
+                    {
+                        if (image.Width < 200 || image.Height < 300)
+                        {
+                            ModelState.AddModelError("", "Poster phải có kích thước tối thiểu 200 x 300 px.");
+                            return View(model);
+                        }
+                    }
+                    posterFile.InputStream.Position = 0;
+                    var fileName = "movie-" + DateTime.Now.ToString("yyyyMMddHHmmss") + "-" + Guid.NewGuid().ToString("N").Substring(0, 8) + extension;
+                    var imageDirectory = Server.MapPath("~/Content/images");
+                    Directory.CreateDirectory(imageDirectory);
+                    posterFile.SaveAs(Path.Combine(imageDirectory, fileName));
+                    model.Poster = fileName;
+                }
+                catch
+                {
+                    ModelState.AddModelError("", "File được chọn không phải ảnh hợp lệ.");
+                    return View(model);
+                }
+            }
+            if (string.IsNullOrWhiteSpace(model.Poster)) model.Poster = "film1.jpg";
             CinemaStore.SaveMovie(model);
             TempData["AdminSuccess"] = "Đã lưu phim " + model.Title + ".";
             return RedirectToAction("Index");
@@ -50,8 +85,13 @@ namespace MovieTicketDB.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult MovieDelete(int id)
         {
-            CinemaStore.DeleteMovie(id);
-            TempData["AdminSuccess"] = "Đã xóa phim.";
+            var blockReason = CinemaStore.GetMovieDeleteBlockReason(id);
+            if (!string.IsNullOrWhiteSpace(blockReason))
+                TempData["AdminError"] = blockReason;
+            else if (CinemaStore.DeleteMovie(id))
+                TempData["AdminSuccess"] = "Đã xóa phim.";
+            else
+                TempData["AdminError"] = "Không tìm thấy phim cần xóa.";
             return RedirectToAction("Index");
         }
 
@@ -122,8 +162,10 @@ namespace MovieTicketDB.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult RebuildShowTimes()
         {
-            CinemaStore.RebuildShowTimes();
-            TempData["AdminSuccess"] = "Đã tạo lại lịch chiếu cho toàn bộ phim.";
+            if (CinemaStore.RebuildShowTimes())
+                TempData["AdminSuccess"] = "Đã tạo lại lịch chiếu cho toàn bộ phim.";
+            else
+                TempData["AdminError"] = "Không thể tạo lại toàn bộ lịch vì đã có vé được đặt. Hãy quản lý từng suất chiếu để bảo toàn lịch sử vé.";
             return RedirectToAction("Index");
         }
 
@@ -156,8 +198,10 @@ namespace MovieTicketDB.Controllers
         [HttpPost, ValidateAntiForgeryToken]
         public ActionResult ShowTimeDelete(int id)
         {
-            CinemaStore.DeleteShowTime(id);
-            TempData["AdminSuccess"] = "Đã xóa suất chiếu.";
+            if (CinemaStore.DeleteShowTime(id))
+                TempData["AdminSuccess"] = "Đã xóa suất chiếu.";
+            else
+                TempData["AdminError"] = "Không thể xóa suất chiếu đã có vé hoặc suất chiếu không tồn tại.";
             return RedirectToAction("Index");
         }
 
